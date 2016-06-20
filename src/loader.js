@@ -48,6 +48,8 @@ export function bindGlobal(name, plugin)
  */
 export function bindSelector(selector, plugin)
 {
+	plugin = plugin.default || plugin;
+
 	_bindAsSelector(selector, function($element) {
 		const instance = plugin($element);
 		_loaded.push({ $element, name: '$'+selector, instance, options: {} });
@@ -61,6 +63,7 @@ export function bindSelector(selector, plugin)
  */
 export function bindAttribute(attr, plugin)
 {
+	plugin = plugin.default || plugin;
 	name = '['+attr+']';
 
 	_bindAsSelector(name, function($element) {
