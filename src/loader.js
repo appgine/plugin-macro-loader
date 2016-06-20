@@ -143,33 +143,47 @@ export function loadGlobal($dom)
 
 
 /**
- * @param {function}
+ * @param {Element|function}
+ * @return {array}
  */
-export function unloadIf(cond)
+export function findPlugins(cond)
 {
-	_loaded.
-		filter(val => cond(val)).
-		tap(val => _loaded.pull(val)).
-		filter(({ instance }) => instance && instance.destroy).
-		tap(({ instance }) => instance.destroy());
+	if (typeof cond === 'function') {
+		return _loaded.filter(val => cond(val));
+	}
+
+	return findPlugins(({ $element }) => contains(cond, $element));
+
+}
+
+
+/**
+ * @param {array}
+ */
+export function unloadPlugins(plugins)
+{
+	plugins.forEach(plugin => {
+		const { instance } = plugin;
+		_loaded.pull(plugin);
+		instance && instance.destroy && instance.destroy();
+	});
 }
 
 
 /**
  * @param {object}
- * @param {function}
+ * @param {array}
  */
-export function updateIf(data, cond)
+export function updatePlugins(plugins, data)
 {
 	Object.keys(data||{}).forEach(function(key) {
 		const [, name, method='update'] = key.match(/^(.*?)(?:::(.+))?$/);
 
 		_loadedGlobal[name] && _loadedGlobal[name].update(data[key]);
 
-		_loaded.
+		plugins.
 			filter(val => val.pluginName===name || val.name===name).
 			filter(({ instance }) => instance && instance[method]).
-			filter(val => cond(val)).
 			forEach(({ instance }) => instance[method](data[key]));
 	});
 }
@@ -180,7 +194,7 @@ export function updateIf(data, cond)
  */
 export function unload($dom)
 {
-	unloadIf(({ $element }) => contains($dom, $element));
+	unloadPlugins(findPlugins($dom));
 }
 
 
@@ -190,7 +204,7 @@ export function unload($dom)
  */
 export function update($dom, data)
 {
-	updateIf(data, ({ $element }) => contains($dom, $element));
+	updatePlugins(findPlugins($dom), data);
 }
 
 
