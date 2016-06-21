@@ -253,7 +253,7 @@ export function resolveDataPlugin($element, fn)
 		const pluginId = matched ? matched[2] : '';
 
 		name += matched ? "" : "[]";
-		pvar = pvar.join(':');
+		pvar = pvar.join(':') || null;
 
 		fn(pluginName, pluginId, name, pvar);
 	});
