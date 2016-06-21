@@ -164,6 +164,11 @@ export function unloadPlugins(plugins)
 {
 	plugins.forEach(plugin => {
 		const { instance } = plugin;
+
+		if (_loaded.indexOf(plugin)!==-1) {
+			_loaded.splice(_loaded.indexOf(plugin), 1);
+		}
+
 		_loaded.pull(plugin);
 		instance && instance.destroy && instance.destroy();
 	});
