@@ -169,7 +169,6 @@ export function unloadPlugins(plugins)
 			_loaded.splice(_loaded.indexOf(plugin), 1);
 		}
 
-		_loaded.pull(plugin);
 		instance && instance.destroy && instance.destroy();
 	});
 }
