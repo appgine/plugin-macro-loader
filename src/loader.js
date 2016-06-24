@@ -1,4 +1,7 @@
 
+import createState from './state'
+
+
 const _asSelector = {};
 
 const _plugins = {};
@@ -12,12 +15,15 @@ const _bindAsSelector = (selector, fn) => (_asSelector[selector] = _asSelector[s
 
 _bindAsSelector('[data-plugin]:not(noscript)', function($element, options) {
 	resolveDataPlugin($element, function(pluginName, pluginId, name, pvar) {
-		const data = loadData(pvar, options.permanent||false);
+		const pluginArguments = [
+			$element,
+			loadData(pvar, options.permanent||false),
+			createState(),
+			pluginId,
+		];
 
-		if (_plugins[pluginName]) {
-			const instance = _plugins[pluginName]($element, data, pluginId);
-			_loaded.push({ $element, pluginName, pluginId, name, options, instance });
-		}
+		const instance = _plugins[pluginName] && _plugins[pluginName](...pluginArguments);
+		_loaded.push({ $element, pluginArguments, pluginName, pluginId, name, options, instance });
 	});
 });
 
@@ -29,6 +35,7 @@ _bindAsSelector('[data-plugin]:not(noscript)', function($element, options) {
 export function bind(name, plugin)
 {
 	_plugins[name] = plugin.default || plugin;
+	hotReload(name, _plugins[name]);
 }
 
 
@@ -49,10 +56,13 @@ export function bindGlobal(name, plugin)
 export function bindSelector(selector, plugin)
 {
 	plugin = plugin.default || plugin;
+	const pluginName = '$' + selector;
 
+	hotReload(pluginName, plugin);
 	_bindAsSelector(selector, function($element) {
-		const instance = plugin($element);
-		_loaded.push({ $element, name: '$'+selector, instance, options: {} });
+		const pluginArguments = [$element, createState()];
+		const instance = plugin(...pluginArguments);
+		_loaded.push({ $element, pluginArguments, pluginName, instance, options: {} });
 	});
 }
 
@@ -64,13 +74,14 @@ export function bindSelector(selector, plugin)
 export function bindAttribute(attr, plugin)
 {
 	plugin = plugin.default || plugin;
-	name = '['+attr+']';
+	const pluginName = '['+attr+']';
 
-	_bindAsSelector(name, function($element) {
+	hotReload(pluginName, plugin);
+	_bindAsSelector(pluginName, function($element) {
 		const pvar = $element.getAttribute(attr)||'';
-		const data = loadData(pvar, false);
-		const instance = plugin($element, data);
-		_loaded.push({ $element, name, instance, options: {} });
+		const pluginArguments = [$element, loadData(pvar, false), createState()];
+		const instance = plugin(...pluginArguments);
+		_loaded.push({ $element, pluginArguments, pluginName, instance, options: {} });
 	});
 }
 
@@ -99,6 +110,19 @@ const matchesSelector = (function() {
 		return $dom instanceof Element ? f.call($dom, selector) : false;
 	}
 })();
+
+
+/**
+ * @param {string}
+ * @param {function}
+ */
+function hotReload(name, createPlugin)
+{
+	findPlugins(({ pluginName }) => pluginName===name).forEach(plugin => {
+		plugin.instance && plugin.instance.destroy && plugin.instance.destroy();
+		plugin.instance = createPlugin(...plugin.pluginArguments);
+	});
+}
 
 
 /**
