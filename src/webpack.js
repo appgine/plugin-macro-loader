@@ -22,16 +22,23 @@ export default function create(parentModule) {
 			module.hot.accept(plugin, function() {
 				const $update = document.createElement('div');
 				$update.textContent = "Plugin '" + name + "' update detected. Reloading..";
+				$update.style.padding = '6px 3px';
 				$notifier.appendChild($update);
 
 				if (document.body && !$notifier.parentNode) {
 					document.body.appendChild($notifier);
 				}
 
-				binder(name, __webpack_require__(plugin)[_export]);
-				$update.style.backgroundColor = "#33cc33";
-				$update.style.padding = '6px 3px';
-				$update.textContent = "Plugin " + name + " reloaded.";
+				try {
+					binder(name, __webpack_require__(plugin)[_export]);
+					$update.style.backgroundColor = "#33cc33";
+					$update.textContent = "Plugin " + name + " reloaded.";
+
+				} catch (e) {
+					$update.style.backgroundColor = "#cc0000";
+					$update.textContent = "Plugin " + name + " update failed ("+e.message+").";
+					console.error(e, e.stack);
+				}
 
 				setTimeout(function() {
 					$notifier.removeChild($update);

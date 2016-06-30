@@ -158,7 +158,7 @@ function createInstance(plugin, pluginArguments, prevInstance) {
 			const ReactDOM = require('react-dom');
 			const RedBox = require('redbox-react');
 			pluginArguments.$redbox = document.createElement('div');
-			ReactDOM.render(React.createElement(RedBox, {error: e}), pluginArguments.$redbox);
+			ReactDOM.render(React.createElement(RedBox.default||RedBox, {error: e}), pluginArguments.$redbox);
 			$redbox.appendChild(pluginArguments.$redbox);
 		}
 	}
