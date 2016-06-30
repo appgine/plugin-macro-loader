@@ -1,7 +1,7 @@
 
 import createState from './state'
 
-
+const $redbox = document.createElement('div');
 const _asSelector = {};
 
 const _plugins = {};
@@ -22,7 +22,7 @@ _bindAsSelector('[data-plugin]:not(noscript)', function($element, options) {
 			pluginId,
 		];
 
-		const instance = _plugins[pluginName] && _plugins[pluginName](...pluginArguments);
+		const instance = createInstance(_plugins[pluginName], pluginArguments);
 		_loaded.push({ $element, pluginArguments, pluginName, pluginId, name, options, instance });
 	});
 });
@@ -61,7 +61,7 @@ export function bindSelector(selector, plugin)
 	hotReload(pluginName, plugin);
 	_bindAsSelector(selector, function($element) {
 		const pluginArguments = [$element, createState()];
-		const instance = plugin(...pluginArguments);
+		const instance = createInstance(plugin, pluginArguments);
 		_loaded.push({ $element, pluginArguments, pluginName, instance, options: {} });
 	});
 }
@@ -80,7 +80,7 @@ export function bindAttribute(attr, plugin)
 	_bindAsSelector(pluginName, function($element) {
 		const pvar = $element.getAttribute(attr)||'';
 		const pluginArguments = [$element, loadData(pvar, false), createState()];
-		const instance = plugin(...pluginArguments);
+		const instance = createInstance(plugin, pluginArguments);
 		_loaded.push({ $element, pluginArguments, pluginName, instance, options: {} });
 	});
 }
@@ -119,9 +119,51 @@ const matchesSelector = (function() {
 function hotReload(name, createPlugin)
 {
 	findPlugins(({ pluginName }) => pluginName===name).forEach(plugin => {
-		plugin.instance && plugin.instance.destroy && plugin.instance.destroy();
-		plugin.instance = createPlugin(...plugin.pluginArguments);
+		plugin.instance = createInstance(createPlugin, plugin.pluginArguments, plugin.instance);
 	});
+}
+
+
+function createInstance(plugin, pluginArguments, prevInstance) {
+	if (process.env.NODE_ENV !== 'production') {
+		if (pluginArguments.$redbox) {
+			const ReactDOM = require('react-dom');
+			ReactDOM.unmountComponentAtNode(pluginArguments.$redbox);
+			$redbox.removeChild(pluginArguments.$redbox);
+			delete pluginArguments.$redbox;
+
+			if ($redbox.children.length===0 && $redbox.parentNode) {
+				$redbox.parentNode.removeChild($redbox);
+			}
+		}
+	}
+
+	try {
+		if (prevInstance && !prevInstance.destroy) {
+			return null;
+
+		} else if (prevInstance) {
+			prevInstance.destroy();
+		}
+
+		return plugin && plugin(...pluginArguments);
+
+	} catch (e) {
+		if (process.env.NODE_ENV !== 'production') {
+			if (document.body && $redbox.children.length===0) {
+				document.body.appendChild($redbox);
+			}
+
+			const React = require('react');
+			const ReactDOM = require('react-dom');
+			const RedBox = require('redbox-react');
+			pluginArguments.$redbox = document.createElement('div');
+			ReactDOM.render(React.createElement(RedBox, {error: e}), pluginArguments.$redbox);
+			$redbox.appendChild(pluginArguments.$redbox);
+		}
+	}
+
+	return null;
 }
 
 
