@@ -1,6 +1,5 @@
 
-import isEqual from 'lodash/fp/isEqual'
-import isPlainObject from 'lodash/fp/isPlainObject'
+import { isEqual, isPlainObject } from './lodash'
 
 
 export default function createState() {
