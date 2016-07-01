@@ -11,7 +11,7 @@ $notifier.style.lineHeight = '24px';
 
 
 export default function create(parentModule) {
-	const loaders = [];
+	const plugins = [];
 
 	setTimeout(function() {
 		notify("Plugins have been loaded.");
@@ -19,8 +19,8 @@ export default function create(parentModule) {
 
 	if (parentModule.hot) {
 		parentModule.hot.addDisposeHandler(function() {
-			loaders.forEach(fn => fn());
-			loaders.splice(0, loaders.length);
+			plugins.forEach(plugin => plugin.willDispose());
+			plugins.splice(0, plugins.length);
 			notify("Plugins have been disposed.");
 		});
 
@@ -28,8 +28,8 @@ export default function create(parentModule) {
 	}
 
 	return function hotReload(binder, name, plugin, _export='default') {
-		const pluginHotReload = binder(name, __webpack_require__(plugin)[_export]);
-		loaders.push(pluginHotReload);
+		const pluginObj = binder(name, __webpack_require__(plugin)[_export]);
+		plugins.push(pluginObj);
 
 		if (module.hot) {
 			module.hot.accept(plugin, function() {
@@ -40,7 +40,7 @@ export default function create(parentModule) {
 				notify($update);
 
 				try {
-					pluginHotReload(__webpack_require__(plugin)[_export]);
+					pluginObj.hotReload(__webpack_require__(plugin)[_export]);
 					$update.style.backgroundColor = "#33cc33";
 					$update.textContent = "Plugin " + name + " reloaded.";
 

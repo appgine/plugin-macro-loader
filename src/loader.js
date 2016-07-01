@@ -3,6 +3,7 @@ import createState from './state'
 
 const $scripts = {};
 const $redbox = document.createElement('div');
+const internalBinders = {};
 const internalSelector = {};
 
 const _plugins = {};
@@ -46,25 +47,46 @@ bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) 
  */
 export function bind(name, plugin)
 {
-	function loader(plugin) {
-		const oldPlugin = _plugins[name];
-		const newPlugin = plugin && plugin.default || plugin;
+	internalBinders[name] = internalBinders[name] || createBinder(name);
+	internalBinders[name].hotReload(plugin);
+	return internalBinders[name];
+}
 
-		_plugins[name] = newPlugin;
 
-		if (newPlugin) {
+function createBinder(name)
+{
+	let hotReloaded = false;
+
+	return {
+		plugins() {
+			return findPlugins(({ name: _name, plugin }) => _name===name && plugin===_plugins[name]);
+		},
+		hotReload(plugin) {
+			if (!plugin) {
+				return this.willDispose();
+			}
+
+			hotReloaded = true;
+
+			const oldPlugin = _plugins[name];
+			const newPlugin = plugin && plugin.default || plugin;
+
+			_plugins[name] = newPlugin;
 			hotReload(name, oldPlugin, newPlugin);
+		},
+		willDispose() {
+			hotReloaded = false;
 
-		} else {
 			setTimeout(function() {
-				if (_plugins[name]===newPlugin) {
-					hotReload(name, oldPlugin, newPlugin);
+				if (hotReloaded===false) {
+					const oldPlugin = _plugins[name];
+					delete _plugins[name];
+					delete internalBinders[name];
+					hotReload(name, oldPlugin);
 				}
 			}, 0);
-		}
+		},
 	}
-
-	return loader(plugin), loader;
 }
 
 
@@ -75,7 +97,11 @@ export function bind(name, plugin)
 export function bindGlobal(name, plugin)
 {
 	_pluginsGlobal[name] = plugin.default || plugin;
-	return function() {}
+	return {
+		plugins() { return []; },
+		hotReload() {},
+		willDispose() {},
+	}
 }
 
 
@@ -122,16 +148,25 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
 		_loaded.push({ $element, plugin, pluginArguments, pluginName, instance, options: {} });
 	});
 
-	return function(newPlugin) {
-		const oldPlugin = plugin;
-		plugin = newPlugin && newPlugin.default || newPlugin;
+	return {
+		plugins() {
+			return findPlugins(({ name: _name, plugin: _plugin }) => _name===name && _plugin===plugin);
+		},
+		hotReload(newPlugin) {
+			if (!newPlugin) {
+				return this.willDispose();
+			}
 
-		if (plugin) {
+			const oldPlugin = plugin;
+			plugin = newPlugin && newPlugin.default || newPlugin;
 			hotReload(pluginName, oldPlugin, plugin);
-
-		} else {
-			setTimeout(function() { !plugin && loader; }, 0);
-		}
+		},
+		willDispose() {
+			const oldPlugin = plugin;
+			plugin = undefined;
+			hotReload(pluginName, oldPlugin);
+			loader();
+		},
 	}
 }
 
