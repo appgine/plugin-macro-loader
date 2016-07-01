@@ -1,6 +1,7 @@
 
 import createState from './state'
 
+const $scripts = {};
 const $redbox = document.createElement('div');
 const internalSelector = {};
 
@@ -132,6 +133,34 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
 			setTimeout(function() { !plugin && loader; }, 0);
 		}
 	}
+}
+
+
+/**
+ * @param {Element}
+ */
+export function loadScripts($dom)
+{
+	const $found = Array.from($dom.querySelectorAll('script[type^="data-plugin/"]'));
+
+	$found.forEach(function($script) {
+		const pvar = ($script.getAttribute('type')||'').replace(/data-plugin\//, '');
+		$scripts[pvar] = $script;
+	});
+}
+
+
+/**
+ * @param {Element}
+ */
+export function unloadScripts($dom)
+{
+	const $found = Array.from($dom.querySelectorAll('script[type^="data-plugin/"]'));
+
+	$found.forEach(function($script) {
+		const pvar = ($script.getAttribute('type')||'').replace(/data-plugin\//, '');
+		delete $scripts[pvar];
+	});
 }
 
 
@@ -385,6 +414,10 @@ export function resolveDataPlugin($element, fn)
 export function loadData(pvar, permanent)
 {
 	try {
+		if ($scripts[pvar]) {
+			return JSON.parse($scripts[pvar].textContent);
+		}
+
 		const data = window[pvar] || (pvar && JSON.parse(pvar));
 		permanent && (window[pvar] = undefined);
 		return data;
