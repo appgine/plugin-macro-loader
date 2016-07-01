@@ -2,7 +2,7 @@
 import createState from './state'
 
 const $redbox = document.createElement('div');
-const _asSelector = {};
+const internalSelector = {};
 
 const _plugins = {};
 const _pluginsGlobal = {};
@@ -10,11 +10,22 @@ const _pluginsGlobal = {};
 const _loaded = [];
 const _loadedGlobal = {};
 
-const _bindAsSelector = (selector, fn) => (_asSelector[selector] = _asSelector[selector] || []).push([fn, []]);
+
+function bindInternalSelector(selector, fn) {
+	internalSelector[selector] = internalSelector[selector] || [];
+
+	const plugin = [fn, []];
+	internalSelector[selector].push(plugin);
+
+	return function() {
+		internalSelector[selector].splice(internalSelector[selector].indexOf(plugin), 1);
+	}
+}
 
 
-_bindAsSelector('[data-plugin]:not(noscript)', function($element, options) {
+bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) {
 	resolveDataPlugin($element, function(pluginName, pluginId, name, pvar) {
+		const plugin = _plugins[pluginName];
 		const pluginArguments = [
 			$element,
 			loadData(pvar, options.permanent||false),
@@ -22,8 +33,8 @@ _bindAsSelector('[data-plugin]:not(noscript)', function($element, options) {
 			pluginId,
 		];
 
-		const instance = createInstance(_plugins[pluginName], pluginArguments);
-		_loaded.push({ $element, pluginArguments, pluginName, pluginId, name, options, instance });
+		const instance = createInstance(plugin, pluginArguments);
+		_loaded.push({ $element, plugin, pluginArguments, pluginName, pluginId, name, options, instance });
 	});
 });
 
@@ -34,8 +45,25 @@ _bindAsSelector('[data-plugin]:not(noscript)', function($element, options) {
  */
 export function bind(name, plugin)
 {
-	_plugins[name] = plugin.default || plugin;
-	hotReload(name, _plugins[name]);
+	function loader(plugin) {
+		const oldPlugin = _plugins[name];
+		const newPlugin = plugin && plugin.default || plugin;
+
+		_plugins[name] = newPlugin;
+
+		if (newPlugin) {
+			hotReload(name, oldPlugin, newPlugin);
+
+		} else {
+			setTimeout(function() {
+				if (_plugins[name]===newPlugin) {
+					hotReload(name, oldPlugin, newPlugin);
+				}
+			}, 0);
+		}
+	}
+
+	return loader(plugin), loader;
 }
 
 
@@ -46,6 +74,7 @@ export function bind(name, plugin)
 export function bindGlobal(name, plugin)
 {
 	_pluginsGlobal[name] = plugin.default || plugin;
+	return function() {}
 }
 
 
@@ -55,15 +84,8 @@ export function bindGlobal(name, plugin)
  */
 export function bindSelector(selector, plugin)
 {
-	plugin = plugin.default || plugin;
 	const pluginName = '$' + selector;
-
-	hotReload(pluginName, plugin);
-	_bindAsSelector(selector, function($element) {
-		const pluginArguments = [$element, createState()];
-		const instance = createInstance(plugin, pluginArguments);
-		_loaded.push({ $element, pluginArguments, pluginName, instance, options: {} });
-	});
+	return _bindSelector(pluginName, selector, plugin, $element => [$element, createState()]);
 }
 
 
@@ -73,16 +95,43 @@ export function bindSelector(selector, plugin)
  */
 export function bindAttribute(attr, plugin)
 {
-	plugin = plugin.default || plugin;
-	const pluginName = '['+attr+']';
-
-	hotReload(pluginName, plugin);
-	_bindAsSelector(pluginName, function($element) {
+	const selector = '['+attr+']';
+	const pluginName = selector;
+	return _bindSelector(pluginName, selector, plugin, function($element) {
 		const pvar = $element.getAttribute(attr)||'';
 		const pluginArguments = [$element, loadData(pvar, false), createState()];
-		const instance = createInstance(plugin, pluginArguments);
-		_loaded.push({ $element, pluginArguments, pluginName, instance, options: {} });
+
+		return pluginArguments;
 	});
+}
+
+
+/**
+ * @param {string}
+ * @param {string}
+ * @param {function}
+ * @param {function}
+ */
+function _bindSelector(pluginName, selector, plugin, createArguments) {
+	plugin = plugin.default || plugin;
+
+	const loader = bindInternalSelector(selector, function($element) {
+		const pluginArguments = createArguments($element);
+		const instance = createInstance(plugin, pluginArguments);
+		_loaded.push({ $element, plugin, pluginArguments, pluginName, instance, options: {} });
+	});
+
+	return function(newPlugin) {
+		const oldPlugin = plugin;
+		plugin = newPlugin && newPlugin.default || newPlugin;
+
+		if (plugin) {
+			hotReload(pluginName, oldPlugin, plugin);
+
+		} else {
+			setTimeout(function() { !plugin && loader; }, 0);
+		}
+	}
 }
 
 
@@ -115,11 +164,13 @@ const matchesSelector = (function() {
 /**
  * @param {string}
  * @param {function}
+ * @param {function}
  */
-function hotReload(name, createPlugin)
+function hotReload(name, oldPlugin, newPlugin)
 {
-	findPlugins(({ pluginName }) => pluginName===name).forEach(plugin => {
-		plugin.instance = createInstance(createPlugin, plugin.pluginArguments, plugin.instance);
+	findPlugins(({ plugin, pluginName }) => pluginName===name && plugin===oldPlugin).forEach(plugin => {
+		plugin.plugin = newPlugin;
+		plugin.instance = createInstance(newPlugin, plugin.pluginArguments, plugin.instance);
 	});
 }
 
@@ -175,11 +226,11 @@ function createInstance(plugin, pluginArguments, prevInstance) {
  */
 export function load($dom, permanent=false, options={})
 {
-	Object.keys(_asSelector).forEach(function(selector) {
+	Object.keys(internalSelector).forEach(function(selector) {
 		const matches = [].concat(matchesSelector($dom, selector) ? $dom : [], Array.from($dom.querySelectorAll(selector)));
 
 		matches.forEach(function($node) {
-			_asSelector[selector].forEach(function([fn, $nodeList]) {
+			internalSelector[selector].forEach(function([fn, $nodeList]) {
 				if ($nodeList.indexOf($node)===-1) {
 					$nodeList.push($node);
 					fn($node, {...options, permanent});
