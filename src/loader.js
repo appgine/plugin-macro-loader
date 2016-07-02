@@ -239,7 +239,7 @@ function createInstance(plugin, pluginArguments, prevInstance) {
 			return null;
 
 		} else if (prevInstance) {
-			prevInstance.destroy();
+			prevInstance.destroy(!!plugin);
 		}
 
 		return plugin && plugin(...pluginArguments);
@@ -330,7 +330,7 @@ export function unloadPlugins(plugins)
 			_loaded.splice(_loaded.indexOf(plugin), 1);
 		}
 
-		instance && instance.destroy && instance.destroy();
+		instance && instance.destroy && instance.destroy(false);
 	});
 }
 
