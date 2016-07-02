@@ -429,7 +429,7 @@ export function loadData(pvar)
 {
 	try {
 		if ($scripts[pvar]) {
-			return JSON.parse($scripts[pvar]);
+			return JSON.parse($scripts[pvar].textContent);
 
 		} else if (pvar) {
 			return JSON.parse(pvar);
