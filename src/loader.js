@@ -28,12 +28,7 @@ function bindInternalSelector(selector, fn) {
 bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) {
 	resolveDataPlugin($element, function(pluginName, pluginId, name, pvar) {
 		const plugin = _plugins[pluginName];
-		const pluginArguments = [
-			$element,
-			loadData(pvar, options.permanent||false),
-			createState(),
-			pluginId,
-		];
+		const pluginArguments = [$element, loadData(pvar), createState(), pluginId];
 
 		const instance = createInstance(plugin, pluginArguments);
 		_loaded.push({ $element, plugin, pluginArguments, pluginName, pluginId, name, options, instance });
@@ -126,7 +121,7 @@ export function bindAttribute(attr, plugin)
 	const pluginName = selector;
 	return _bindSelector(pluginName, selector, plugin, function($element) {
 		const pvar = $element.getAttribute(attr)||'';
-		const pluginArguments = [$element, loadData(pvar, false), createState()];
+		const pluginArguments = [$element, loadData(pvar), createState()];
 
 		return pluginArguments;
 	});
@@ -196,20 +191,6 @@ export function unloadScripts($dom)
 		const pvar = ($script.getAttribute('type')||'').replace(/data-plugin\//, '');
 		delete $scripts[pvar];
 	});
-}
-
-
-/**
- * @param {Element}
- */
-export function evalScripts($dom)
-{
-	const $scripts = [].filter.call($dom.querySelectorAll('script'), function($script) {
-		return !!String($script.textContent).match(/\s*var p_[a-zA-Z0-9]+/);
-	});
-
-	$scripts.forEach($script => window.eval($script.textContent));
-	$scripts.forEach($script => $script.parentNode.removeChild($script));
 }
 
 
@@ -284,11 +265,10 @@ function createInstance(plugin, pluginArguments, prevInstance) {
 
 /**
  * @param {Element}
- * @param {bool}
  * @param {Object}
  * @return {Array}
  */
-export function load($dom, permanent=false, options={})
+export function load($dom, options={})
 {
 	Object.keys(internalSelector).forEach(function(selector) {
 		const matches = [].concat(matchesSelector($dom, selector) ? $dom : [], Array.from($dom.querySelectorAll(selector)));
@@ -297,7 +277,7 @@ export function load($dom, permanent=false, options={})
 			internalSelector[selector].forEach(function([fn, $nodeList]) {
 				if ($nodeList.indexOf($node)===-1) {
 					$nodeList.push($node);
-					fn($node, {...options, permanent});
+					fn($node, {...options});
 				}
 			});
 		});
@@ -312,7 +292,7 @@ export function loadGlobal($dom)
 {
 	Array.from($dom.querySelectorAll('noscript[data-plugin]')).forEach(function($node) {
 		resolveDataPlugin($node, function(pluginName, pluginId, name, pvar) {
-			const data = loadData(pvar, true);
+			const data = loadData(pvar);
 
 			if (_pluginsGlobal[pluginName]) {
 				_loadedGlobal[name] = _loadedGlobal[name] || _pluginsGlobal[pluginName](pluginId);
@@ -443,23 +423,21 @@ export function resolveDataPlugin($element, fn)
 
 /**
  * @param {string}
- * @param {boolean}
  * @return {mixed}
  */
-export function loadData(pvar, permanent)
+export function loadData(pvar)
 {
 	try {
 		if ($scripts[pvar]) {
-			return JSON.parse($scripts[pvar].textContent);
+			return JSON.parse($scripts[pvar]);
+
+		} else if (pvar) {
+			return JSON.parse(pvar);
 		}
 
-		const data = window[pvar] || (pvar && JSON.parse(pvar));
-		permanent && (window[pvar] = undefined);
-		return data;
+	} catch (e) {}
 
-	} catch (e) {
-		return pvar;
-	}
+	return pvar;
 }
 
 
