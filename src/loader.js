@@ -171,9 +171,7 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
  */
 export function loadScripts($dom)
 {
-	const $found = Array.from($dom.querySelectorAll('script[type^="data-plugin/"]'));
-
-	$found.forEach(function($script) {
+	querySelectorAll($dom, 'script[type^="data-plugin/"]').forEach(function($script) {
 		const pvar = ($script.getAttribute('type')||'').replace(/data-plugin\//, '');
 		$scripts[pvar] = $script;
 	});
@@ -185,14 +183,22 @@ export function loadScripts($dom)
  */
 export function unloadScripts($dom)
 {
-	const $found = Array.from($dom.querySelectorAll('script[type^="data-plugin/"]'));
-
-	$found.forEach(function($script) {
+	querySelectorAll($dom, 'script[type^="data-plugin/"]').forEach(function($script) {
 		const pvar = ($script.getAttribute('type')||'').replace(/data-plugin\//, '');
 		delete $scripts[pvar];
 	});
 }
 
+
+/**
+ * @param {Element}
+ * @param {string}
+ * @return {Array}
+ */
+export function querySelectorAll($dom, selector)
+{
+	return [].concat(matchesSelector($dom, selector) ? $dom : [], Array.from($dom.querySelectorAll(selector)));
+}
 
 const matchesSelector = (function() {
 	const p = Element.prototype;
@@ -271,9 +277,7 @@ function createInstance(plugin, pluginArguments, prevInstance) {
 export function load($dom, options={})
 {
 	Object.keys(internalSelector).forEach(function(selector) {
-		const matches = [].concat(matchesSelector($dom, selector) ? $dom : [], Array.from($dom.querySelectorAll(selector)));
-
-		matches.forEach(function($node) {
+		querySelectorAll($dom, selector).forEach(function($node) {
 			internalSelector[selector].forEach(function([fn, $nodeList]) {
 				if ($nodeList.indexOf($node)===-1) {
 					$nodeList.push($node);
@@ -290,7 +294,7 @@ export function load($dom, options={})
  */
 export function loadGlobal($dom)
 {
-	Array.from($dom.querySelectorAll('noscript[data-plugin]')).forEach(function($node) {
+	querySelectorAll($dom, 'noscript[data-plugin]').forEach(function($node) {
 		resolveDataPlugin($node, function(pluginName, pluginId, name, pvar) {
 			const data = loadData(pvar);
 
