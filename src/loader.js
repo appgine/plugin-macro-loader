@@ -26,9 +26,9 @@ function bindInternalSelector(selector, fn) {
 
 
 bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) {
-	resolveDataPlugin($element, function(pluginName, pluginId, name, pvar) {
+	resolveDataAttribute($element, 'data-plugin', function({ pluginName, pluginId, name, data }) {
 		const plugin = _plugins[pluginName];
-		const pluginArguments = [$element, loadData(pvar), createState(), pluginId];
+		const pluginArguments = [$element, data, createState(), pluginId];
 
 		const instance = createInstance(plugin, pluginArguments);
 		_loaded.push({ $element, plugin, pluginArguments, pluginName, pluginId, name, options, instance });
@@ -295,9 +295,7 @@ export function load($dom, options={})
 export function loadGlobal($dom)
 {
 	querySelectorAll($dom, 'noscript[data-plugin]').forEach(function($node) {
-		resolveDataPlugin($node, function(pluginName, pluginId, name, pvar) {
-			const data = loadData(pvar);
-
+		resolveDataAttribute($node, 'data-plugin', function({ pluginName, pluginId, name, data }) {
 			if (_pluginsGlobal[pluginName]) {
 				_loadedGlobal[name] = _loadedGlobal[name] || _pluginsGlobal[pluginName](pluginId);
 				_loadedGlobal[name].update(data);
@@ -408,19 +406,19 @@ export function command(name, command, ...args)
  * @param {Element}
  * @param {function}
  */
-export function resolveDataPlugin($element, fn)
+export function resolveDataAttribute($element, attrName, fn)
 {
-	($element.getAttribute('data-plugin')||'').split('$').filter(attr => attr).map(function(attr) {
-		let [name, ...pvar] = attr.split(':');
+	($element.getAttribute(attrName)||'').split('$').filter(attrValue => attrValue).map(function(attrValue) {
+		let [attrPlugin, ...pvar] = attrValue.split(':');
 
-		const matched = name.match(/^(.+)\[(.*)\]$/);
-		const pluginName = matched ? matched[1] : name;
-		const pluginId = matched ? matched[2] : '';
+		const matched = attrPlugin.match(/^(?:(.*)@)?(([^\[]*)(?:\[([^\]]*)\])?)$/);
+		const target = matched[1]||'';
+		const name = matched[2] + (matched[4]===undefined ? "[]" : "");
+		const pluginName = matched[3];
+		const pluginId = matched[4]||'';
+		const data = loadData(pvar.join(':') || null)
 
-		name += matched ? "" : "[]";
-		pvar = pvar.join(':') || null;
-
-		fn(pluginName, pluginId, name, pvar);
+		fn({ pluginName, pluginId, target, name, data });
 	});
 }
 
@@ -429,7 +427,7 @@ export function resolveDataPlugin($element, fn)
  * @param {string}
  * @return {mixed}
  */
-export function loadData(pvar)
+function loadData(pvar)
 {
 	try {
 		if ($scripts[pvar]) {
