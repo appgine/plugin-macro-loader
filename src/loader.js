@@ -1,4 +1,7 @@
 
+export { bindApi } from './api'
+
+import PluginApi from './api'
 import createState from './state'
 
 const $scripts = {};
@@ -30,8 +33,8 @@ bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) 
 		const plugin = _plugins[pluginName];
 		const pluginArguments = [$element, data, createState(), pluginId];
 
-		const instance = createInstance(plugin, pluginArguments);
-		_loaded.push({ $element, plugin, pluginArguments, pluginName, pluginId, name, options, instance });
+		const { api, pluginApi, instance } = createInstance(plugin, pluginArguments);
+		_loaded.push({ $element, plugin, pluginArguments, pluginName, pluginId, name, options, api, pluginApi, instance });
 	});
 });
 
@@ -139,8 +142,8 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
 
 	const loader = bindInternalSelector(selector, function($element) {
 		const pluginArguments = createArguments($element);
-		const instance = createInstance(plugin, pluginArguments);
-		_loaded.push({ $element, plugin, pluginArguments, pluginName, instance, options: {} });
+		const { api, pluginApi, instance } = createInstance(plugin, pluginArguments);
+		_loaded.push({ $element, plugin, pluginArguments, pluginName, api, pluginApi, instance, options: {} });
 	});
 
 	return {
@@ -221,7 +224,13 @@ function hotReload(name, oldPlugin, newPlugin)
 {
 	findPlugins(({ plugin, pluginName }) => pluginName===name && plugin===oldPlugin).forEach(plugin => {
 		plugin.plugin = newPlugin;
-		plugin.instance = createInstance(newPlugin, plugin.pluginArguments, plugin.instance);
+
+		if (plugin.instance) {
+			const { api, pluginApi, instance } = createInstance(newPlugin, plugin.pluginArguments, plugin.instance);
+			plugin.api = api;
+			plugin.pluginApi = pluginApi;
+			plugin.instance = instance;
+		}
 	});
 }
 
@@ -241,14 +250,17 @@ function createInstance(plugin, pluginArguments, prevInstance) {
 	}
 
 	try {
-		if (prevInstance && !prevInstance.destroy) {
-			return null;
-
-		} else if (prevInstance) {
+		if (prevInstance && prevInstance.destroy) {
 			prevInstance.destroy(!!plugin);
 		}
 
-		return plugin && plugin(...pluginArguments);
+		if (plugin) {
+			const pluginApi = new PluginApi();
+			const instance = plugin.apply(pluginApi, pluginArguments)||null;
+			const api = pluginApi.get;
+
+			return { api, pluginApi, instance };
+		}
 
 	} catch (e) {
 		if (process.env.NODE_ENV !== 'production') {
@@ -265,7 +277,8 @@ function createInstance(plugin, pluginArguments, prevInstance) {
 		}
 	}
 
-	return null;
+	const api = function(name) {};
+	return { api };
 }
 
 
