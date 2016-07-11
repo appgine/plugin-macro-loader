@@ -253,7 +253,7 @@ function createInstance(plugin, pluginArguments, prevInstance) {
 	} catch (e) {
 		if (process.env.NODE_ENV !== 'production') {
 			if (document.body && $redbox.children.length===0) {
-				document.body.appendChild($redbox);
+				document.body.parentElement.appendChild($redbox);
 			}
 
 			const React = require('react');
