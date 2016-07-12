@@ -3,9 +3,10 @@ export { bindApi } from './api'
 
 import PluginApi from './api'
 import createState from './state'
+import destroy from './destroy'
+import redboxWrapper from './redboxWrapper'
 
 const $scripts = {};
-const $redbox = document.createElement('div');
 const internalBinders = {};
 const internalSelector = {};
 
@@ -33,8 +34,8 @@ bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) 
 		const plugin = _plugins[pluginName];
 		const pluginArguments = [$element, data, createState(), pluginId];
 
-		const { api, pluginApi, instance } = createInstance(plugin, pluginArguments);
-		_loaded.push({ $element, plugin, pluginArguments, pluginName, pluginId, name, options, api, pluginApi, instance });
+		const pluginObj = { $element, plugin, pluginArguments, pluginName, pluginId, name, options }
+		_loaded.push(createInstance(pluginObj, plugin));
 	});
 });
 
@@ -142,8 +143,8 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
 
 	const loader = bindInternalSelector(selector, function($element) {
 		const pluginArguments = createArguments($element);
-		const { api, pluginApi, instance } = createInstance(plugin, pluginArguments);
-		_loaded.push({ $element, plugin, pluginArguments, pluginName, api, pluginApi, instance, options: {} });
+		const pluginObj = { $element, plugin, pluginArguments, pluginName, options: {} }
+		_loaded.push(createInstance(pluginObj, plugin));
 	});
 
 	return {
@@ -222,63 +223,28 @@ const matchesSelector = (function() {
  */
 function hotReload(name, oldPlugin, newPlugin)
 {
-	findPlugins(({ plugin, pluginName }) => pluginName===name && plugin===oldPlugin).forEach(plugin => {
-		plugin.plugin = newPlugin;
-
-		if (plugin.instance) {
-			const { api, pluginApi, instance } = createInstance(newPlugin, plugin.pluginArguments, plugin.instance);
-			plugin.api = api;
-			plugin.pluginApi = pluginApi;
-			plugin.instance = instance;
-		}
+	findPlugins(({ plugin, pluginName }) => pluginName===name && plugin===oldPlugin).forEach(pluginObj => {
+		pluginObj.plugin = newPlugin;
+		redboxWrapper(pluginObj, () => destroy(pluginObj, !!newPlugin));
+		createInstance(pluginObj, newPlugin);
 	});
 }
 
 
-function createInstance(plugin, pluginArguments, prevInstance) {
-	if (process.env.NODE_ENV !== 'production') {
-		if (pluginArguments.$redbox) {
-			const ReactDOM = require('react-dom');
-			ReactDOM.unmountComponentAtNode(pluginArguments.$redbox);
-			$redbox.removeChild(pluginArguments.$redbox);
-			delete pluginArguments.$redbox;
+function createInstance(pluginObj, createPlugin) {
+	pluginObj.pluginApi = undefined;
+	pluginObj.api = function(name) {};
+	pluginObj.instance = undefined;
 
-			if ($redbox.children.length===0 && $redbox.parentNode) {
-				$redbox.parentNode.removeChild($redbox);
-			}
-		}
-	}
+	createPlugin && redboxWrapper(pluginObj, function() {
+		const pluginApi = new PluginApi();
 
-	try {
-		if (prevInstance && prevInstance.destroy) {
-			prevInstance.destroy(!!plugin);
-		}
+		pluginObj.pluginApi = pluginApi;
+		pluginObj.api = pluginApi.get.bind(pluginApi);
+		pluginObj.instance = createPlugin.apply(pluginApi, pluginObj.pluginArguments)||{};
+	});
 
-		if (plugin) {
-			const pluginApi = new PluginApi();
-			const instance = plugin.apply(pluginApi, pluginArguments)||null;
-			const api = pluginApi.get;
-
-			return { api, pluginApi, instance };
-		}
-
-	} catch (e) {
-		if (process.env.NODE_ENV !== 'production') {
-			if (document.body && $redbox.children.length===0) {
-				document.body.parentElement.appendChild($redbox);
-			}
-
-			const React = require('react');
-			const ReactDOM = require('react-dom');
-			const RedBox = require('redbox-react');
-			pluginArguments.$redbox = document.createElement('div');
-			ReactDOM.render(React.createElement(RedBox.default||RedBox, {error: e}), pluginArguments.$redbox);
-			$redbox.appendChild(pluginArguments.$redbox);
-		}
-	}
-
-	const api = function(name) {};
-	return { api };
+	return pluginObj;
 }
 
 
@@ -338,14 +304,12 @@ export function findPlugins(cond)
  */
 export function unloadPlugins(plugins)
 {
-	plugins.forEach(plugin => {
-		const { instance } = plugin;
-
-		if (_loaded.indexOf(plugin)!==-1) {
-			_loaded.splice(_loaded.indexOf(plugin), 1);
+	plugins.forEach(pluginObj => {
+		if (_loaded.indexOf(pluginObj)!==-1) {
+			_loaded.splice(_loaded.indexOf(pluginObj), 1);
 		}
 
-		instance && instance.destroy && instance.destroy(false);
+		destroy(pluginObj, false);
 	});
 }
 
