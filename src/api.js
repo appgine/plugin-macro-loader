@@ -108,7 +108,7 @@ PluginApi.prototype.get = function(name) {
 
 PluginApi.prototype.destroy = function(partial) {
 	Object.keys(PluginApi._destroy).forEach(name => {
-		if (this._context[name]!==undefined) {
+		if (typeof PluginApi._destroy[name]==='function' && this._context[name]!==undefined) {
 			PluginApi._destroy[name](this._context[name]);
 		}
 	});
