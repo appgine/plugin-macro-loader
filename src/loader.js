@@ -224,13 +224,26 @@ const matchesSelector = (function() {
 function hotReload(name, oldPlugin, newPlugin)
 {
 	findPlugins(({ plugin, pluginName }) => pluginName===name && plugin===oldPlugin).forEach(pluginObj => {
-		pluginObj.plugin = newPlugin;
-		redboxWrapper(pluginObj, () => destroy(pluginObj, !!newPlugin));
-		createInstance(pluginObj, newPlugin);
+		pluginHotReload(pluginObj, newPlugin);
 	});
 }
 
 
+/**
+ * @param {object}
+ * @param {object}
+ */
+export function pluginHotReload(pluginObj, plugin) {
+	pluginObj.plugin = plugin;
+	redboxWrapper(pluginObj, () => destroy(pluginObj, !!plugin));
+	createInstance(pluginObj, plugin);
+}
+
+
+/**
+ * @param {object}
+ * @param {object}
+ */
 function createInstance(pluginObj, createPlugin) {
 	pluginObj.pluginApi = undefined;
 	pluginObj.api = function(name) {};
