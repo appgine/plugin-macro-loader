@@ -13,10 +13,6 @@ $notifier.style.lineHeight = '24px';
 export default function create(parentModule) {
 	const plugins = [];
 
-	setTimeout(function() {
-		notify("Plugins have been loaded.");
-	}, 0);
-
 	if (parentModule.hot) {
 		parentModule.hot.addDisposeHandler(function() {
 			plugins.forEach(plugin => plugin.willDispose());
