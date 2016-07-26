@@ -24,13 +24,23 @@ export default function create(parentModule) {
 	}
 
 	return function hotReload(binder, name, plugin, _export='default') {
-		const pluginObj = binder(name, __webpack_require__(plugin)[_export]);
+		if (typeof name === 'number') {
+			_export = plugin||_export;
+			plugin = name;
+			name = '';
+		}
+
+		const pluginName = binder.name + "('"+name+"'')";
+		const pluginObj = name
+			? binder(name, __webpack_require__(plugin)[_export])
+			: binder(__webpack_require__(plugin)[_export]);
+
 		plugins.push(pluginObj);
 
 		if (module.hot) {
 			module.hot.accept(plugin, function() {
 				const $update = document.createElement('div');
-				$update.textContent = "Plugin '" + name + "' update detected. Reloading..";
+				$update.textContent = "Plugin " + pluginName + " update detected. Reloading..";
 				$update.style.padding = '6px 3px';
 
 				notify($update);
@@ -38,11 +48,11 @@ export default function create(parentModule) {
 				try {
 					pluginObj.hotReload(__webpack_require__(plugin)[_export]);
 					$update.style.backgroundColor = "#33cc33";
-					$update.textContent = "Plugin " + name + " reloaded.";
+					$update.textContent = "Plugin " + pluginName + " reloaded.";
 
 				} catch (e) {
 					$update.style.backgroundColor = "#cc0000";
-					$update.textContent = "Plugin " + name + " update failed ("+e.message+").";
+					$update.textContent = "Plugin " + pluginName + " update failed ("+e.message+").";
 					console.error(e, e.stack);
 				}
 			});

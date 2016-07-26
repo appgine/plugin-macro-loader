@@ -12,9 +12,11 @@ const internalSelector = {};
 
 const _plugins = {};
 const _pluginsGlobal = {};
+const _pluginsSystem = [];
 
 const _loaded = [];
 const _loadedGlobal = {};
+let _loadedSystem = false;
 
 
 function bindInternalSelector(selector, fn) {
@@ -100,6 +102,53 @@ export function bindGlobal(name, plugin)
 		plugins() { return []; },
 		hotReload() {},
 		willDispose() {},
+	}
+}
+
+
+/**
+ * @param {function}
+ */
+export function bindSystem(plugin)
+{
+	let loaded = false;
+	let result = null;
+	function destroy() {
+		if (typeof result === 'function') {
+			result();
+
+		} else if (result && typeof result.destroy === 'function') {
+			result.destroy();
+		}
+
+		result = null;
+	}
+
+	const load = function(reload=false) {
+		if (loaded===reload) {
+			loaded = true;
+			destroy();
+			result = plugin();
+		}
+	}
+
+	_pluginsSystem.push(load);
+	_loadedSystem && load(false);
+
+	return {
+		plugins() { return []; },
+		hotReload(_plugin) {
+			plugin = _plugin;
+			load(true);
+		},
+		willDispose() {
+			loaded = false;
+			destroy();
+
+			if (_pluginsSystem.indexOf(load)!==-1) {
+				_pluginsSystem.splice(_pluginsSystem.indexOf(load), 1);
+			}
+		},
 	}
 }
 
@@ -294,6 +343,15 @@ export function loadGlobal($dom)
 			}
 		});
 	});
+}
+
+
+export function loadSystem()
+{
+	if (_loadedSystem===false) {
+		_loadedSystem = true;
+		_pluginsSystem.forEach(load => load(false));
+	}
 }
 
 
