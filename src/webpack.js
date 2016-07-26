@@ -23,17 +23,25 @@ export default function create(parentModule) {
 		parentModule.hot.accept();
 	}
 
-	return function hotReload(binder, name, plugin, _export='default') {
+	return function hotReload(binder, name, plugin, _export='default', decorator) {
 		if (typeof name === 'number') {
 			_export = plugin||_export;
 			plugin = name;
 			name = '';
 		}
 
+		if (typeof _export === 'function') {
+			decorator = _export;
+			_export = 'default';
+
+		} else if (typeof decorator !== 'function') {
+			decorator = plugin => plugin;
+		}
+
 		const pluginName = binder.name + "('"+name+"'')";
 		const pluginObj = name
-			? binder(name, __webpack_require__(plugin)[_export])
-			: binder(__webpack_require__(plugin)[_export]);
+			? binder(name, decorator(__webpack_require__(plugin)[_export]))
+			: binder(decorator(__webpack_require__(plugin)[_export]));
 
 		plugins.push(pluginObj);
 
@@ -46,7 +54,7 @@ export default function create(parentModule) {
 				notify($update);
 
 				try {
-					pluginObj.hotReload(__webpack_require__(plugin)[_export]);
+					pluginObj.hotReload(decorator(__webpack_require__(plugin)[_export]));
 					$update.style.backgroundColor = "#33cc33";
 					$update.textContent = "Plugin " + pluginName + " reloaded.";
 
