@@ -1,17 +1,42 @@
 
-export { bindApi } from './loader/api'
 export { loadScripts, unloadScripts } from './loader/scripts'
-export { bind, bindSelector, bindAttribute } from './loader/selector'
 export { load, unloadPlugins, findPlugins } from './loader/selector'
 export { command, commandAll } from './loader/selector'
-export { bindGlobal, loadGlobal } from './loader/global'
-export { bindSystem, loadSystem } from './loader/system'
+export { loadGlobal } from './loader/global'
+export { loadSystem } from './loader/system'
 export contains from './lib/contains'
 export querySelectorAll from './lib/querySelectorAll'
 export resolveDataAttribute from './lib/resolveDataAttribute'
 
+import { bindApi as _bindApi } from './loader/api'
+import { bindGlobal as _bindGlobal } from './loader/global'
+import { bindSystem as _bindSystem } from './loader/system'
+import { bind as _bind } from './loader/selector'
+import createPluginApi from './lib/api'
+import createCreateInstance from './lib/createInstance'
+
 import { findPlugins, unloadPlugins } from './loader/selector'
 import { updateGlobal } from './loader/global'
+
+const _PluginApi = createPluginApi();
+const _createInstance = createCreateInstance(_PluginApi);
+
+export const bindApi = _bindApi(_PluginApi);
+export const bindSystem = _bindSystem(_createInstance);
+export const bindGlobal = _bindGlobal(_createInstance);
+export const { bind, bindSelector, bindAttribute } = _bind(_createInstance);
+
+
+export default function loader(fn) {
+	const __PluginApi = createPluginApi(_PluginApi);
+	const __createInstance = createCreateInstance(__PluginApi);
+	const bindApi = _bindApi(__PluginApi);
+	const bindSystem = _bindSystem(__createInstance);
+	const bindGlobal = _bindGlobal(__createInstance);
+	const { bind, bindSelector, bindAttribute } = _bind(__createInstance);
+
+	fn({ bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute });
+}
 
 
 /**

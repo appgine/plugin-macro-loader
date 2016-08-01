@@ -5,111 +5,133 @@ import { loadData } from './scripts'
 import resolveDataAttribute from '../lib/resolveDataAttribute'
 import redboxWrapper from '../lib/redboxWrapper'
 import contains from '../lib/contains'
-import createInstance from '../lib/createInstance'
 import destroy from '../lib/destroy'
 import createState from '../lib/state'
 
-const internalBinders = {};
-
-const _plugins = {};
+const _binders = [];
 const _loaded = [];
 
 
 bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) {
 	resolveDataAttribute($element, 'data-plugin', function({ pluginName, pluginId, name, data }) {
-		const plugin = _plugins[pluginName];
-		const pluginArguments = [$element, data, createState(), pluginId];
+		const pluginDef = getPluginByName(pluginName);
 
-		const pluginObj = { $element, plugin, pluginArguments, pluginName, pluginId, name, options }
-		_loaded.push(createInstance(pluginObj, plugin));
+		if (pluginDef) {
+			const [ createInstance, plugin ] = pluginDef;
+			const pluginArguments = [$element, data, createState(), pluginId];
+
+			const pluginObj = { $element, plugin, pluginArguments, pluginName, pluginId, name, options }
+			_loaded.push(createInstance(pluginObj, plugin));
+		}
 	});
 });
 
 
-/**
- * @param {string}
- * @param {function}
- */
-export function bind(name, plugin)
-{
-	internalBinders[name] = internalBinders[name] || createBinder(name);
-	internalBinders[name].hotReload(plugin);
-	return internalBinders[name];
-}
-
-
-function createBinder(name)
-{
-	let hotReloaded = false;
-
-	return {
-		plugins() {
-			return findPlugins(({ name: _name, plugin }) => _name===name && plugin===_plugins[name]);
-		},
-		hotReload(plugin) {
-			if (!plugin) {
-				return this.willDispose();
-			}
-
-			hotReloaded = true;
-
-			const oldPlugin = _plugins[name];
-			const newPlugin = plugin && plugin.default || plugin;
-
-			_plugins[name] = newPlugin;
-			hotReload(name, oldPlugin, newPlugin);
-		},
-		willDispose() {
-			hotReloaded = false;
-
-			setTimeout(function() {
-				if (hotReloaded===false) {
-					const oldPlugin = _plugins[name];
-					delete _plugins[name];
-					delete internalBinders[name];
-					hotReload(name, oldPlugin);
-				}
-			}, 0);
-		},
+function getPluginByName(pluginName) {
+	for (let [createInstance, plugins] of _binders) {
+		if (plugins[pluginName]) {
+			return [createInstance, plugins[pluginName]];
+		}
 	}
 }
 
 
-/**
- * @param {string}
- * @param {function}
- */
-export function bindSelector(selector, plugin)
-{
-	const pluginName = '$' + selector;
-	return _bindSelector(pluginName, selector, plugin, $element => [$element, createState()]);
+export function bind(createInstance) {
+
+	const plugins = {};
+	const internalBinders = {};
+	_binders.push([createInstance, plugins]);
+
+
+	function createBinder(createInstance, name)
+	{
+		let hotReloaded = false;
+
+		return {
+			plugins() {
+				return findPlugins(({ name: _name, plugin }) => _name===name && plugin===plugins[name]);
+			},
+			hotReload(plugin) {
+				if (!plugin) {
+					return this.willDispose();
+				}
+
+				hotReloaded = true;
+
+				const oldPlugin = plugins[name];
+				const newPlugin = plugin && plugin.default || plugin;
+
+				plugins[name] = newPlugin;
+				hotReload(name, oldPlugin, newPlugin);
+			},
+			willDispose() {
+				hotReloaded = false;
+
+				setTimeout(function() {
+					if (hotReloaded===false) {
+						const oldPlugin = plugins[name];
+						delete plugins[name];
+						delete internalBinders[name];
+						hotReload(name, oldPlugin);
+					}
+				}, 0);
+			},
+		}
+	}
+
+
+	/**
+	 * @param {string}
+	 * @param {function}
+	 * @return {object}
+	 */
+	function bind(name, plugin)
+	{
+		internalBinders[name] = internalBinders[name] || createBinder(createInstance, name);
+		internalBinders[name].hotReload(plugin);
+		return internalBinders[name];
+	}
+
+
+	/**
+	 * @param {string}
+	 * @param {function}
+	 */
+	function bindSelector(selector, plugin)
+	{
+		const pluginName = '$' + selector;
+		return _bindSelector(createInstance, pluginName, selector, plugin, $element => [$element, createState()]);
+	}
+
+
+	/**
+	 * @param {string}
+	 * @param {function}
+	 */
+	function bindAttribute(attr, plugin)
+	{
+		const selector = '['+attr+']';
+		const pluginName = selector;
+		return _bindSelector(createInstance, pluginName, selector, plugin, function($element) {
+			const pvar = $element.getAttribute(attr)||'';
+			const pluginArguments = [$element, loadData(pvar), createState()];
+
+			return pluginArguments;
+		});
+	}
+
+
+	return { bind, bindSelector, bindAttribute };
 }
 
 
 /**
  * @param {string}
- * @param {function}
- */
-export function bindAttribute(attr, plugin)
-{
-	const selector = '['+attr+']';
-	const pluginName = selector;
-	return _bindSelector(pluginName, selector, plugin, function($element) {
-		const pvar = $element.getAttribute(attr)||'';
-		const pluginArguments = [$element, loadData(pvar), createState()];
-
-		return pluginArguments;
-	});
-}
-
-
-/**
- * @param {string}
  * @param {string}
  * @param {function}
  * @param {function}
  */
-function _bindSelector(pluginName, selector, plugin, createArguments) {
+function _bindSelector(createInstance, pluginName, selector, plugin, createArguments) {
 	plugin = plugin.default || plugin;
 
 	const loader = bindInternalSelector(selector, function($element) {
@@ -120,7 +142,7 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
 
 	return {
 		plugins() {
-			return findPlugins(({ name: _name, plugin: _plugin }) => _name===name && _plugin===plugin);
+			return findPlugins(({ pluginName: _pluginName, plugin: _plugin }) => _pluginName===pluginName && _plugin===plugin);
 		},
 		hotReload(newPlugin) {
 			if (!newPlugin) {
@@ -128,7 +150,7 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
 			}
 
 			const oldPlugin = plugin;
-			plugin = newPlugin && newPlugin.default || newPlugin;
+			plugin = newPlugin.default || newPlugin;
 			hotReload(pluginName, oldPlugin, plugin);
 		},
 		willDispose() {

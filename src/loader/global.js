@@ -11,13 +11,15 @@ const _loadedGlobal = {};
  * @param {string}
  * @param {function}
  */
-export function bindGlobal(name, plugin)
+export function bindGlobal(createInstance)
 {
-	_pluginsGlobal[name] = plugin.default || plugin;
-	return {
-		plugins() { return []; },
-		hotReload() {},
-		willDispose() {},
+	return function(name, plugin) {
+		_pluginsGlobal[name] = plugin.default || plugin;
+		return {
+			plugins() { return []; },
+			hotReload() {},
+			willDispose() {},
+		}
 	}
 }
 

@@ -1,6 +1,4 @@
 
-import PluginApi from '../lib/api'
-
 const apiBinder = {};
 
 
@@ -8,14 +6,16 @@ const apiBinder = {};
  * @param {string}
  * @param {function|object}
  */
-export function bindApi(name, api) {
-	apiBinder[name] = apiBinder[name] || createBinder(name);
-	apiBinder[name].hotReload(api);
-	return apiBinder[name];
+export function bindApi(PluginApi) {
+	return function(name, api) {
+		apiBinder[name] = apiBinder[name] || createBinder(PluginApi, name);
+		apiBinder[name].hotReload(api);
+		return apiBinder[name];
+	}
 }
 
 
-function createBinder(name) {
+function createBinder(PluginApi, name) {
 	let hotReloaded = false;
 	let prevApi = null;
 
