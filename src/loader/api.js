@@ -1,5 +1,4 @@
 
-import { findPlugins, pluginHotReload } from './selector'
 import PluginApi from '../lib/api'
 
 const apiBinder = {};
@@ -60,15 +59,12 @@ function createBinder(name) {
 			prevApi = api;
 
 			let error = undefined;
-			findPlugins(({ pluginApi }) => pluginApi && (name in pluginApi._context)).
-				forEach(pluginObj => {
-					try {
-						pluginHotReload(pluginObj, pluginObj.plugin);
+			try {
+				PluginApi.hotReload(name);
 
-					} catch (e) {
-						error = e;
-					}
-				});
+			} catch (e) {
+				error = e;
+			}
 
 			PluginApi._destroy[name] = api.destroy;
 			if (error) throw error;

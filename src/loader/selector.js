@@ -146,24 +146,12 @@ function _bindSelector(pluginName, selector, plugin, createArguments) {
  * @param {function}
  * @param {function}
  */
-function hotReload(name, oldPlugin, newPlugin)
+function hotReload(name, oldPlugin, newPlugin=null)
 {
 	findPlugins(({ plugin, pluginName }) => pluginName===name && plugin===oldPlugin).forEach(pluginObj => {
-		pluginHotReload(pluginObj, newPlugin);
+		pluginObj.hotReload(newPlugin);
 	});
 }
-
-
-/**
- * @param {object}
- * @param {object}
- */
-export function pluginHotReload(pluginObj, plugin) {
-	pluginObj.plugin = plugin;
-	redboxWrapper(pluginObj, () => destroy(pluginObj, !!plugin));
-	createInstance(pluginObj, plugin);
-}
-
 
 
 /**
