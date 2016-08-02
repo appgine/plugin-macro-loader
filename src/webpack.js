@@ -1,13 +1,41 @@
 
-const $notifier = document.createElement('div');
-$notifier.style.position = 'fixed';
-$notifier.style.top = '0';
-$notifier.style.left = '0';
-$notifier.style.zIndex = '9998';
-$notifier.style.backgroundColor = '#FAFAFA';
-$notifier.style.width = '600px';
-$notifier.style.fontSize = '18px';
-$notifier.style.lineHeight = '24px';
+import notify from './lib/notify'
+import { loader as _loader, loaderGlobal as _loaderGlobal } from './loader'
+
+
+export function loader(parentModule, fn) {
+	createHotLoader(_loader, parentModule, fn);
+}
+
+
+export function loaderGlobal(parentModule, fn) {
+	createHotLoader(_loaderGlobal, parentModule, fn);
+}
+
+
+function createHotLoader(loader, parentModule, fn) {
+	const hotReload = create(parentModule);
+
+	loader(function(binders) {
+		const { bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute } = binders;
+		const hotBindApi = hotReload.bind(undefined, bindApi);
+		const hotBindSystem = hotReload.bind(undefined, bindSystem);
+		const hotBindGlobal = hotReload.bind(undefined, bindGlobal);
+		const hotBind = hotReload.bind(undefined, bind);
+		const hotBindSelector = hotReload.bind(undefined, bindSelector);
+		const hotBindAttribute = hotReload.bind(undefined, bindAttribute);
+
+		fn({
+			...binders,
+			hotBindApi,
+			hotBindSystem,
+			hotBindGlobal,
+			hotBind,
+			hotBindSelector,
+			hotBindAttribute,
+		});
+	});
+}
 
 
 export default function create(parentModule) {
@@ -65,34 +93,7 @@ export default function create(parentModule) {
 				}
 			});
 		}
-	}
-}
 
-
-function notify($node) {
-	if (process.env.NODE_ENV==='development') {
-		if (typeof $node === "string") {
-			const $dom = document.createElement('div');
-			$dom.textContent = $node;
-			$dom.style.padding = '6px 3px';
-
-			return notify($dom);
-		}
-
-		$notifier.appendChild($node);
-
-		if (document.body && !$notifier.parentNode) {
-			document.body.appendChild($notifier);
-		}
-
-		setTimeout(function() {
-			setTimeout(function() {
-				$notifier.removeChild($node);
-
-				if ($notifier.children.length===0 && $notifier.parentNode) {
-					$notifier.parentNode.removeChild($notifier);
-				}
-			}, 2000);
-		}, 0);
+		return pluginObj;
 	}
 }
