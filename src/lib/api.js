@@ -27,26 +27,6 @@ export default function createPluginApi(...apiParents) {
 	_PluginApi._apiList = {};
 	_PluginApi._apiDestroy = {};
 
-	_PluginApi.prototype.get = function(name) {
-		return this._context[name] && this._context[name].filter(_ => _).shift();
-	}
-
-	_PluginApi.prototype.destroy = function() {
-		if (_plugins.indexOf(this._pluginObj)!==-1) {
-			_plugins.splice(_plugins.indexOf(this._pluginObj), 1);
-		}
-
-		Object.keys(this._context).forEach(name => {
-			for (let i=0; i<this._context[name].length; i++) {
-				if (this._context[name][i]!==undefined) {
-					const _apiDestroy = i ? _PluginApi._apiParents[i-1]._apiDestroy : _PluginApi._apiDestroy;
-
-					if (typeof _apiDestroy[name]==='function') {
-						_apiDestroy[name](this._context[name][i]);
-					}
-				}
-			}
-		});
 	}
 
 	_PluginApi.hotReload = function(name, apiNew={}) {
@@ -107,6 +87,29 @@ function apiAccessor(key) {
 }
 
 function PluginApi() {}
+
+
+PluginApi.prototype.get = function(name) {
+	return this._context[name] && this._context[name].filter(_ => _).shift();
+}
+
+PluginApi.prototype.destroy = function() {
+	if (_plugins.indexOf(this._pluginObj)!==-1) {
+		_plugins.splice(_plugins.indexOf(this._pluginObj), 1);
+	}
+
+	Object.keys(this._context).forEach(name => {
+		for (let i=0; i<this._context[name].length; i++) {
+			if (this._context[name][i]!==undefined) {
+				const _apiDestroy = i ? this._PluginApi._apiParents[i-1]._apiDestroy : this._PluginApi._apiDestroy;
+
+				if (typeof _apiDestroy[name]==='function') {
+					_apiDestroy[name](this._context[name][i]);
+				}
+			}
+		}
+	});
+}
 
 function hotReload(name) {
 	let error = null;
