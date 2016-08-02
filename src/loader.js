@@ -8,6 +8,7 @@ export contains from './lib/contains'
 export querySelectorAll from './lib/querySelectorAll'
 export resolveDataAttribute from './lib/resolveDataAttribute'
 
+import { mockApi as _mockApi } from './loader/api'
 import { bindApi as _bindApi } from './loader/api'
 import { bindGlobal as _bindGlobal } from './loader/global'
 import { bindSystem as _bindSystem } from './loader/system'
@@ -21,6 +22,7 @@ import { updateGlobal } from './loader/global'
 const _PluginApi = createPluginApi();
 const _createInstance = createCreateInstance(_PluginApi);
 
+export const mockApi = _mockApi(_PluginApi);
 export const bindApi = _bindApi(_PluginApi);
 export const bindSystem = _bindSystem(_createInstance);
 export const bindGlobal = _bindGlobal(_createInstance);
@@ -30,17 +32,18 @@ export const { bind, bindSelector, bindAttribute } = _bind(_createInstance);
 export function loader(fn) {
 	const __PluginApi = createPluginApi(_PluginApi);
 	const __createInstance = createCreateInstance(__PluginApi);
+	const mockApi = _mockApi(__PluginApi);
 	const bindApi = _bindApi(__PluginApi);
 	const bindSystem = _bindSystem(__createInstance);
 	const bindGlobal = _bindGlobal(__createInstance);
 	const { bind, bindSelector, bindAttribute } = _bind(__createInstance);
 
-	fn({ bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute });
+	fn({ mockApi, bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute });
 }
 
 
 export function loaderGlobal(fn) {
-	fn({ bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute });
+	fn({ mockApi, bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute });
 }
 
 

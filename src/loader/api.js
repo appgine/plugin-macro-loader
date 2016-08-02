@@ -3,10 +3,30 @@ const apiBinder = {};
 
 
 /**
- * @param {string}
- * @param {function|object}
+ * @param {object}
+ * @return {function}
+ */
+export function mockApi(PluginApi) {
+
+	/**
+	 * @param {string...}
+	 */
+	return function() {
+		PluginApi.mock(...arguments);
+	}
+}
+
+
+/**
+ * @param {object}
  */
 export function bindApi(PluginApi) {
+
+	/**
+	 * @param {string}
+	 * @param {function|object}
+	 * @return {object}
+	 */
 	return function(name, api) {
 		apiBinder[name] = apiBinder[name] || createBinder(PluginApi, name);
 		apiBinder[name].hotReload(api);

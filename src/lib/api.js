@@ -27,6 +27,8 @@ export default function createPluginApi(...apiParents) {
 	_PluginApi._apiList = {};
 	_PluginApi._apiDestroy = {};
 
+	_PluginApi.mock = function(...keys) {
+		keys.forEach(key => PluginApi.prototype[key] = PluginApi.prototype[key] || apiAccessor(key));
 	}
 
 	_PluginApi.hotReload = function(name, apiNew={}) {
