@@ -27,7 +27,7 @@ export const bindGlobal = _bindGlobal(_createInstance);
 export const { bind, bindSelector, bindAttribute } = _bind(_createInstance);
 
 
-export default function loader(fn) {
+export function loader(fn) {
 	const __PluginApi = createPluginApi(_PluginApi);
 	const __createInstance = createCreateInstance(__PluginApi);
 	const bindApi = _bindApi(__PluginApi);
@@ -35,6 +35,11 @@ export default function loader(fn) {
 	const bindGlobal = _bindGlobal(__createInstance);
 	const { bind, bindSelector, bindAttribute } = _bind(__createInstance);
 
+	fn({ bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute });
+}
+
+
+export function loaderGlobal(fn) {
 	fn({ bindApi, bindSystem, bindGlobal, bind, bindSelector, bindAttribute });
 }
 
