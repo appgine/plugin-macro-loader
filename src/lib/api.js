@@ -1,7 +1,10 @@
 
-export default function createPluginApi(parentApi) {
+const _plugins = [];
 
-	function PluginApi(pluginObj) {
+
+export default function createPluginApi(...apiParents) {
+
+	function _PluginApi(pluginObj) {
 		if (Object.defineProperty) {
 			Object.defineProperty(this, '_context', {
 				value: {},
@@ -13,38 +16,108 @@ export default function createPluginApi(parentApi) {
 			this._context = {};
 		}
 
+		_plugins.push(pluginObj);
 		this._pluginObj = pluginObj;
-		PluginApi._plugins.push(pluginObj);
+		this._PluginApi = _PluginApi;
 	}
 
-	PluginApi._plugins = [];
-	PluginApi._destroy = {};
+	_PluginApi.prototype = PluginApi.prototype;
 
-	PluginApi.prototype.get = function(name) {
-		return this._context[name];
+	_PluginApi._apiParents = apiParents;
+	_PluginApi._apiList = {};
+	_PluginApi._apiDestroy = {};
+
+	_PluginApi.prototype.get = function(name) {
+		return this._context[name] && this._context[name].filter(_ => _).shift();
 	}
 
-	PluginApi.prototype.destroy = function(partial) {
-		Object.keys(PluginApi._destroy).forEach(name => {
-			if (typeof PluginApi._destroy[name]==='function' && this._context[name]!==undefined) {
-				PluginApi._destroy[name](this._context[name]);
+	_PluginApi.prototype.destroy = function() {
+		if (_plugins.indexOf(this._pluginObj)!==-1) {
+			_plugins.splice(_plugins.indexOf(this._pluginObj), 1);
+		}
+
+		Object.keys(this._context).forEach(name => {
+			for (let i=0; i<this._context[name].length; i++) {
+				if (this._context[name][i]!==undefined) {
+					const _apiDestroy = i ? _PluginApi._apiParents[i-1]._apiDestroy : _PluginApi._apiDestroy;
+
+					if (typeof _apiDestroy[name]==='function') {
+						_apiDestroy[name](this._context[name][i]);
+					}
+				}
 			}
 		});
 	}
 
-	PluginApi.hotReload = function(name) {
-		let error = null;
-		PluginApi._plugins.
-			filter(({ pluginApi }) => pluginApi && (name in pluginApi._context)).
-			forEach(pluginObj => {
-				try {
-					pluginObj.hotReload();
+	_PluginApi.hotReload = function(name, apiNew={}) {
+		const _apiNew = {...apiNew};
+		delete _apiNew.destroy;
 
-				} catch (e) {
-					error = e;
+		const exists = [];
+		Object.keys(_PluginApi._apiList).
+			filter(apiName => apiName!==name).
+			map(apiName => _PluginApi._apiList[apiName]).
+			forEach(apiSibling => {
+				Object.keys(_apiNew).forEach(key => {
+					if (apiSibling[key]!==undefined) {
+						exists.push(key);
+					}
+				});
+			});
+
+		if (exists.length) {
+			throw new Error("PluginApi methods '" + exists.join(', ') + "' already exist.");
+		}
+
+		_PluginApi._apiList[name] = _apiNew;
+
+		Object.keys(_apiNew).forEach(key => {
+			PluginApi.prototype[key] = PluginApi.prototype[key] || apiAccessor(key);
+		});
+
+		hotReload(name);
+
+		_PluginApi._apiDestroy[name] = apiNew.destroy;
+	};
+
+	return _PluginApi;
+}
+
+
+function apiAccessor(key) {
+	return function() {
+		const pluginApiList = [this._PluginApi].concat(this._PluginApi._apiParents);
+		let first = undefined;
+
+		for (let i=0; i<pluginApiList.length; i++) {
+			const apiList = pluginApiList[i]._apiList;
+
+			Object.keys(apiList).forEach(name => {
+				if (key in apiList[name]) {
+					const apiFn = apiList[name][key].default || apiList[name][key];
+					this._context[name] = this._context[name] || [];
+					this._context[name][i] = apiFn(this._context[name][i], ...arguments);
+					first = first || this._context[name][i];
 				}
 			});
-	}
+		}
 
-	return PluginApi;
+		return first;
+	}
+}
+
+function PluginApi() {}
+
+function hotReload(name) {
+	let error = null;
+	_plugins.
+		filter(({ pluginApi }) => pluginApi && (name in pluginApi._context)).
+		forEach(pluginObj => {
+			try {
+				pluginObj.hotReload();
+
+			} catch (e) {
+				error = e;
+			}
+		});
 }

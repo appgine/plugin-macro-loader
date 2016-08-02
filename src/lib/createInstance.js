@@ -5,10 +5,14 @@ import destroy from './destroy'
 
 /**
  * @param {object}
- * @param {object}
- * @param {object}
  */
 export default function createCreateInstance(PluginApi) {
+
+	/**
+	 * @param {object}
+	 * @param {object}
+	 * @return {object}
+	 */
 	return function createInstance(pluginObj, createPlugin) {
 		pluginObj.plugin = createPlugin;
 		pluginObj.hotReload = function(newPlugin) {

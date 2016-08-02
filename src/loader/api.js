@@ -17,7 +17,6 @@ export function bindApi(PluginApi) {
 
 function createBinder(PluginApi, name) {
 	let hotReloaded = false;
-	let prevApi = null;
 
 	return {
 		hotReload(api) {
@@ -27,54 +26,15 @@ function createBinder(PluginApi, name) {
 				api = {[name]: api};
 			}
 
-			if (prevApi) {
-				Object.keys(prevApi).forEach(key => {
-					if (key!=='destroy') {
-						delete PluginApi.prototype[key];
-					}
-				});
-			}
-
-			const exists = [];
-			Object.keys(api).forEach(key => {
-				if (key!=='destroy' && PluginApi.prototype[key]!==undefined) {
-					exists.push(key);
-				}
-			});
-
-			if (exists.length) {
-				throw new Error("PluginApi methods '" + exists.join(', ') + "' already exist.");
-			}
-
-			Object.keys(api).forEach(key => {
-				if (key!=='destroy') {
-					PluginApi.prototype[key] = function() {
-						const apiFn = api[key].default || api[key];
-						return this._context[name] = apiFn(this._context[name], ...arguments);
-					};
-				}
-			});
-
 			hotReloaded = true;
-			prevApi = api;
-
-			let error = undefined;
-			try {
-				PluginApi.hotReload(name);
-
-			} catch (e) {
-				error = e;
-			}
-
-			PluginApi._destroy[name] = api.destroy;
-			if (error) throw error;
+			PluginApi.hotReload(name, api);
 		},
 		willDispose() {
 			hotReloaded = false;
 
 			setTimeout(() => {
 				if (hotReloaded===false) {
-					this.hotReload({});
+					PluginApi.hotReload(name);
 				}
 			}, 0);
 		}
