@@ -49,7 +49,7 @@ export function loaderGlobal(fn) {
 
 /**
  * @param {object}
- * @param {array}
+ * @param {object}
  */
 export function updatePlugins(plugins, data)
 {
@@ -62,6 +62,22 @@ export function updatePlugins(plugins, data)
 			filter(val => val.pluginName===name || val.name===name).
 			filter(({ instance }) => instance && instance[method]).
 			forEach(({ instance }) => instance[method](data[key]));
+	});
+}
+
+
+/**
+ * @param {object}
+ * @param {object}
+ */
+export function updatePlugin(plugin, data)
+{
+	Object.keys(data||{}).forEach(function(key) {
+		const [, name, method='update'] = key.match(/^(.*?)(?:::(.+))?$/);
+
+		if (plugin && plugin[method] && !name) {
+			plugin[method](data[key]);
+		}
 	});
 }
 
