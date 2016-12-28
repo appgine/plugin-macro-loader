@@ -90,7 +90,7 @@ function createPersist(state) {
 			persistState = {};
 
 			Object.keys(state.initial.initialState).forEach(function(key) {
-				persistState[key] = state.initial.initialState[key];
+				persistState[key] = state[key];
 			});
 		}
 
