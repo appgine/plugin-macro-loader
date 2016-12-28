@@ -1,6 +1,6 @@
 {
   "name": "plugin-macro-loader",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "description": "Loader for Latte PluginMacro extension",
   "license": "MIT",
   "keywords": [
