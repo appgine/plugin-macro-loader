@@ -59,7 +59,7 @@ function createInitial(state) {
 function createReset(state) {
 	return function(zero=false) {
 		if (zero===false && state.isDirtyInitial()) {
-			state.createResetInitial();
+			state.resetInitial();
 
 		} else if (state.isDirty()) {
 			copyState(state, {
