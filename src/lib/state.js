@@ -85,7 +85,7 @@ function createResetInitial(state) {
 
 
 function createPersist(state) {
-	return function(persistState) {
+	return function(persistState, copyToState=true) {
 		if (persistState===undefined) {
 			persistState = {};
 
@@ -101,7 +101,9 @@ function createPersist(state) {
 			...cloneObj(persistState||{}),
 		};
 
-		copyState(state, persistState);
+		if (copyToState) {
+			copyState(state, persistState);
+		}
 	}
 }
 
