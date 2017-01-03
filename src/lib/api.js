@@ -77,8 +77,15 @@ function apiAccessor(key) {
 			Object.keys(apiList).forEach(name => {
 				if (key in apiList[name]) {
 					const apiFn = apiList[name][key].default || apiList[name][key];
+					const pluginThis = {
+						$element: this._pluginObj.$element,
+						pluginName: this._pluginObj.pluginName,
+						pluginId: this._pluginObj.pluginId,
+						name: this._pluginObj.name,
+					};
+
 					this._context[name] = this._context[name] || [];
-					this._context[name][i] = apiFn(this._context[name][i], ...arguments);
+					this._context[name][i] = apiFn.call(pluginThis, this._context[name][i], ...arguments);
 					first = first || this._context[name][i];
 				}
 			});
