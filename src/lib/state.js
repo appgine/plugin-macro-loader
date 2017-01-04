@@ -155,11 +155,12 @@ function isDirty(state, states) {
 
 
 function copyState(state, newState) {
-	Object.keys(newState).forEach(function(key) {
-		state[key] = undefined;
-	});
+	newState = cloneObj(newState);
 
-	extendObject(state, cloneObj(newState), state.initial.source, state.initial.pointers, state.initial.sources);
+	Object.keys(newState).forEach(function(key) {
+		delete state[key];
+		extend(key, state, newState, state.initial.source, state.initial.pointers, state.initial.sources);
+	});
 }
 
 
