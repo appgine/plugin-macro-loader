@@ -1,6 +1,4 @@
 
-const apiBinder = {};
-
 
 /**
  * @param {object}
@@ -21,6 +19,8 @@ export function mockApi(PluginApi) {
  * @param {object}
  */
 export function bindApi(PluginApi) {
+
+	const apiBinder = {};
 
 	/**
 	 * @param {string}
