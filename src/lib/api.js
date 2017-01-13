@@ -69,12 +69,11 @@ export default function createPluginApi(...apiParents) {
 function apiAccessor(key) {
 	return function() {
 		const pluginApiList = [this._PluginApi].concat(this._PluginApi._apiParents);
-		let first = undefined;
 
 		for (let i=0; i<pluginApiList.length; i++) {
 			const apiList = pluginApiList[i]._apiList;
 
-			Object.keys(apiList).forEach(name => {
+			for (let name of Object.keys(apiList)) {
 				if (key in apiList[name]) {
 					const apiFn = apiList[name][key].default || apiList[name][key];
 					const pluginThis = {
@@ -86,12 +85,10 @@ function apiAccessor(key) {
 
 					this._context[name] = this._context[name] || [];
 					this._context[name][i] = apiFn.call(pluginThis, this._context[name][i], ...arguments);
-					first = first || this._context[name][i];
+					return this._context[name][i];
 				}
-			});
+			}
 		}
-
-		return first;
 	}
 }
 
