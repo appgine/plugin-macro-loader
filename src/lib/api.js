@@ -1,4 +1,6 @@
 
+import clone from './clone'
+
 const _plugins = [];
 
 
@@ -26,6 +28,7 @@ export default function createPluginApi(...apiParents) {
 	_PluginApi._apiParents = apiParents;
 	_PluginApi._apiList = {};
 	_PluginApi._apiDestroy = {};
+	_PluginApi._apiInitialState = {};
 
 	_PluginApi.mock = function(...keys) {
 		keys.forEach(key => PluginApi.prototype[key] = PluginApi.prototype[key] || apiAccessor(key));
@@ -34,6 +37,7 @@ export default function createPluginApi(...apiParents) {
 	_PluginApi.hotReload = function(name, apiNew={}) {
 		const _apiNew = {...apiNew};
 		delete _apiNew.destroy;
+		delete _apiNew.initialState;
 
 		const exists = [];
 		Object.keys(_PluginApi._apiList).
@@ -60,6 +64,7 @@ export default function createPluginApi(...apiParents) {
 		hotReload(name);
 
 		_PluginApi._apiDestroy[name] = apiNew.destroy;
+		_PluginApi._apiInitialState[name] = apiNew.initialState;
 	};
 
 	return _PluginApi;
@@ -84,8 +89,19 @@ function apiAccessor(key) {
 					};
 
 					this._context[name] = this._context[name] || [];
-					this._context[name][i] = apiFn.call(pluginThis, this._context[name][i], ...arguments);
-					return this._context[name][i];
+
+					const initialState = pluginApiList[i]._apiInitialState[name];
+
+					if (initialState) {
+						if (this._context[name][i]===undefined) {
+							this._context[name][i] = (typeof initialState==='function') ? initialState() : clone(initialState);
+						}
+
+						return apiFn.call(pluginThis, this._context[name][i], ...arguments);
+
+					} else {
+						return this._context[name][i] = apiFn.call(pluginThis, this._context[name][i], ...arguments);
+					}
 				}
 			}
 		}
