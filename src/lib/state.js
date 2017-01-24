@@ -1,5 +1,6 @@
 
 import { isEqual, isPlainObject } from './lodash'
+import clone from './clone'
 
 const properties = ['initial', 'reset', 'resetInitial', 'persist', 'isDirty', 'isDirtyInitial'];
 const propertiesFactory = [createInitial, createReset, createResetInitial, createPersist, createIsDirty, createIsDirtyInitial];
@@ -33,8 +34,8 @@ function createInitial(state) {
 		checkState(initialState);
 		checkState(zeroState);
 
-		initial.initialState = cloneObj(initialState);
-		initial.zeroState = cloneObj(zeroState);
+		initial.initialState = clone(initialState);
+		initial.zeroState = clone(zeroState);
 
 		const newState = {
 			...initial.zeroState,
@@ -42,7 +43,7 @@ function createInitial(state) {
 			...initial.persistState,
 		}
 
-		extendObject(state, cloneObj(newState), initial.source, initial.pointers, initial.sources);
+		extendObject(state, clone(newState), initial.source, initial.pointers, initial.sources);
 	}
 
 	initial.pointers = [];
@@ -98,7 +99,7 @@ function createPersist(state) {
 
 		state.initial.persistState = {
 			...state.initial.persistState,
-			...cloneObj(persistState||{}),
+			...clone(persistState||{}),
 		};
 
 		if (copyToState) {
@@ -155,7 +156,7 @@ function isDirty(state, states) {
 
 
 function copyState(state, newState) {
-	newState = cloneObj(newState);
+	newState = clone(newState);
 
 	Object.keys(newState).forEach(function(key) {
 		delete state[key];
@@ -237,42 +238,4 @@ function extend(key, state, initialState, source, pointers, sources) {
 		source[key] = value;
 		state[key] = value;
 	}
-}
-
-
-function cloneObj(obj) {
-	const _obj = {};
-
-	Object.keys(obj).forEach(function(key) {
-		if (isPlainObject(obj[key])) {
-			_obj[key] = cloneObj(obj[key]);
-
-		} else if (Array.isArray(obj[key])) {
-			_obj[key] = cloneArr(obj[key]);
-
-		} else {
-			_obj[key] = obj[key];
-		}
-	});
-
-	return _obj;
-}
-
-
-function cloneArr(arr) {
-	const _arr = [];
-
-	for (let val of arr) {
-		if (isPlainObject(val)) {
-			_arr.push(cloneObj(val));
-
-		} else if (Array.isArray(val)) {
-			_arr.push(cloneArr(val));
-
-		} else {
-			_arr.push(val);
-		}
-	}
-
-	return _arr;
 }
