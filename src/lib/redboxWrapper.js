@@ -30,8 +30,14 @@ export default function redboxWrapper(stash, tryFn, catchFn)
 			const ReactDOM = require('react-dom');
 			const RedBox = require('redbox-react');
 			stash.$redbox = document.createElement('div');
-			ReactDOM.render(React.createElement(RedBox.default||RedBox, {error: e}), stash.$redbox);
-			$redbox.appendChild(stash.$redbox);
+
+			try {
+				ReactDOM.render(React.createElement(RedBox.default||RedBox, {error: e}), stash.$redbox);
+				$redbox.appendChild(stash.$redbox);
+
+			} catch (e) {
+				delete stash.$redbox;
+			}
 		}
 
 		return catchFn && catchFn();
