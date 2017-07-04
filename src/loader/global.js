@@ -1,4 +1,5 @@
 
+import destroy from '../lib/destroy'
 import querySelectorAll from '../lib/querySelectorAll'
 import resolveDataAttribute from '../lib/resolveDataAttribute'
 
@@ -47,4 +48,13 @@ export function loadGlobal($dom)
 export function updateGlobal(name, data)
 {
 	_loadedGlobal[name] && _loadedGlobal[name].update(data[key]);
+}
+
+
+export function unloadGlobal()
+{
+	Object.keys(_loadedGlobal).forEach(function(key) {
+		destroy(_loadedGlobal[key]);
+		delete _loadedGlobal[key];
+	});
 }

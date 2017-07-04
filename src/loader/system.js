@@ -12,34 +12,33 @@ let _loadedSystem = false;
 export function bindSystem(createInstance) {
 	return function(plugin) {
 		const pluginObj = {
+			load(reload=false) {
+				if (this.loaded===reload) {
+					this.loaded = true;
+					destroy(this);
+					this.instance = createInstance(this, plugin);
+				}
+			},
 			loaded: false,
 			instance: undefined,
 			pluginArguments: [createState()],
 		};
 
-		const load = function(reload=false) {
-			if (pluginObj.loaded===reload) {
-				pluginObj.loaded = true;
-				destroy(pluginObj);
-				pluginObj.instance = createInstance(pluginObj, plugin);
-			}
-		}
-
-		_pluginsSystem.push(load);
-		_loadedSystem && load(false);
+		_pluginsSystem.push(pluginObj);
+		_loadedSystem && pluginObj.load(false);
 
 		return {
 			plugins() { return []; },
 			hotReload(_plugin) {
 				plugin = _plugin;
-				load(true);
+				pluginObj.load(true);
 			},
 			willDispose() {
 				pluginObj.loaded = false;
 				destroy(pluginObj);
 
-				if (_pluginsSystem.indexOf(load)!==-1) {
-					_pluginsSystem.splice(_pluginsSystem.indexOf(load), 1);
+				if (_pluginsSystem.indexOf(pluginObj)!==-1) {
+					_pluginsSystem.splice(_pluginsSystem.indexOf(pluginObj), 1);
 				}
 			},
 		}
@@ -51,6 +50,15 @@ export function loadSystem()
 {
 	if (_loadedSystem===false) {
 		_loadedSystem = true;
-		_pluginsSystem.forEach(load => load(false));
+		_pluginsSystem.forEach(pluginObj => pluginObj.load(false));
+	}
+}
+
+
+export function unloadSystem()
+{
+	if (_loadedSystem) {
+		_loadedSystem = false;
+		_pluginsSystem.forEach(pluginObj => destroy(pluginObj));
 	}
 }
