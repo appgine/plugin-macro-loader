@@ -16,7 +16,7 @@ export function bindSystem(createInstance) {
 				if (this.loaded===reload) {
 					this.loaded = true;
 					destroy(this);
-					this.instance = createInstance(this, plugin);
+					createInstance(this, plugin);
 				}
 			},
 			loaded: false,
