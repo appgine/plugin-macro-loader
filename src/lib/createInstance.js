@@ -1,6 +1,7 @@
 
 import redboxWrapper from './redboxWrapper'
 import { destroyPlugin } from './destroy'
+import { isArgumentObj } from '../helpers'
 
 
 /**
@@ -28,7 +29,13 @@ export default function createCreateInstance(PluginApi) {
 
 				pluginObj.pluginApi = pluginApi;
 				pluginObj.api = pluginApi.get.bind(pluginApi);
-				pluginObj.instance = pluginObj.plugin.apply(pluginApi, pluginObj.pluginArguments||[])||{};
+
+				if (isArgumentObj(pluginObj.plugin)) {
+					pluginObj.instance = pluginObj.plugin.call(pluginApi, pluginObj.pluginArgumentsObj||{})||{};
+
+				} else {
+					pluginObj.instance = pluginObj.plugin.apply(pluginApi, pluginObj.pluginArguments||[])||{};
+				}
 			});
 		}
 
