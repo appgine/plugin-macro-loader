@@ -34,8 +34,8 @@ function createInitial(state) {
 		checkState(initialState);
 		checkState(zeroState);
 
-		initial.initialState = clone(initialState);
-		initial.zeroState = clone(zeroState);
+		copyInto(initial.initialState, clone(initialState));
+		copyInto(initial.zeroState, clone(zeroState));
 
 		const newState = {
 			...initial.zeroState,
@@ -152,6 +152,13 @@ function isDirty(state, states) {
 	}
 
 	return false;
+}
+
+
+function copyInto(obj, state) {
+	for (let key of Object.keys(state)) {
+		obj[key] = state[key];
+	}
 }
 
 
