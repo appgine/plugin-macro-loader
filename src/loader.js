@@ -2,7 +2,7 @@
 export { loadScripts, unloadScripts } from './loader/scripts'
 export { load, unloadPlugins, findPlugins } from './loader/selector'
 export { command, commandAll } from './loader/selector'
-export { loadGlobal, unloadGlobal } from './loader/global'
+export { loadGlobal, unloadGlobal, updateGlobal } from './loader/global'
 export { loadSystem, unloadSystem } from './loader/system'
 export contains from './lib/contains'
 export querySelectorAll from './lib/querySelectorAll'
