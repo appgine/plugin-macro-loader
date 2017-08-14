@@ -54,7 +54,7 @@ export function loaderGlobal(fn) {
 export function updatePlugins(plugins, data)
 {
 	Object.keys(data||{}).forEach(function(key) {
-		const [, name, method='update'] = key.match(/^(.*?)(?:::(.+))?$/);
+		const [, name, method='update'] = key.match(/^(.*?)(?:::(.+))?$/)||[];
 
 		updateGlobal(name, data[key]);
 
@@ -73,7 +73,7 @@ export function updatePlugins(plugins, data)
 export function updatePlugin(plugin, data)
 {
 	Object.keys(data||{}).forEach(function(key) {
-		const [, name, method='update'] = key.match(/^(.*?)(?:::(.+))?$/);
+		const [, name, method='update'] = key.match(/^(.*?)(?:::(.+))?$/)||[];
 
 		if (plugin && plugin.instance && plugin.instance[method] && !name) {
 			plugin.instance[method](data[key]);
