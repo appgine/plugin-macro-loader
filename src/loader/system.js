@@ -11,6 +11,7 @@ let _loadedSystem = false;
  */
 export function bindSystem(createInstance) {
 	return function(plugin) {
+		const state = createState();
 		const pluginObj = {
 			load(reload=false) {
 				if (this.loaded===reload) {
@@ -21,7 +22,8 @@ export function bindSystem(createInstance) {
 			},
 			loaded: false,
 			instance: undefined,
-			pluginArguments: [createState()],
+			pluginArguments: [state],
+			pluginArgumentsObj: { state },
 		};
 
 		_pluginsSystem.push(pluginObj);

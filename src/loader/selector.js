@@ -18,9 +18,11 @@ bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) 
 
 		if (pluginDef) {
 			const [ createInstance, plugin ] = pluginDef;
-			const pluginArguments = [$element, data, createState(), pluginId];
+			const state = createState();
+			const pluginArguments = [$element, data, state, pluginId];
+			const pluginArgumentsObj = { $element, $root: $element, data, state, pluginId };
 
-			const pluginObj = { $element, plugin, pluginArguments, pluginName, pluginId, name, options }
+			const pluginObj = { $element, plugin, state, pluginArguments, pluginArgumentsObj, pluginName, pluginId, name, options }
 			_loaded.push(createInstance(pluginObj, plugin));
 		}
 	});
@@ -100,7 +102,11 @@ export function bind(createInstance) {
 	function bindSelector(selector, plugin)
 	{
 		const pluginName = '$' + selector;
-		return _bindSelector(createInstance, pluginName, selector, plugin, $element => [$element, createState()]);
+		return _bindSelector(createInstance, pluginName, selector, plugin, function($element, state) {
+			const pluginArguments = [$element, state];
+			const pluginArgumentsObj = { $element, $root: $element, state };
+			return [pluginArguments, pluginArgumentsObj];
+		});
 	}
 
 
@@ -112,11 +118,12 @@ export function bind(createInstance) {
 	{
 		const selector = '['+attr+']';
 		const pluginName = selector;
-		return _bindSelector(createInstance, pluginName, selector, plugin, function($element) {
+		return _bindSelector(createInstance, pluginName, selector, plugin, function($element, state) {
 			const pvar = $element.getAttribute(attr)||'';
-			const pluginArguments = [$element, loadData(pvar), createState()];
-
-			return pluginArguments;
+			const data = loadData(pvar);
+			const pluginArguments = [$element, data, state];
+			const pluginArgumentsObj = { $element, $root: $element, data, state };
+			return [pluginArguments, pluginArgumentsObj];
 		});
 	}
 
@@ -135,8 +142,9 @@ function _bindSelector(createInstance, pluginName, selector, plugin, createArgum
 	plugin = plugin.default || plugin;
 
 	const loader = bindInternalSelector(selector, function($element) {
-		const pluginArguments = createArguments($element);
-		const pluginObj = { $element, plugin, pluginArguments, pluginName, options: {} }
+		const state = createState();
+		const [pluginArguments, pluginArgumentsObj] = createArguments($element, state);
+		const pluginObj = { $element, plugin, state, pluginArguments, pluginArgumentsObj, pluginName, options: {} }
 		_loaded.push(createInstance(pluginObj, plugin));
 	});
 
