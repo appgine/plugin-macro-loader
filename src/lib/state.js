@@ -7,7 +7,25 @@ const propertiesFactory = [createInitial, createReset, createResetInitial, creat
 
 
 export default function createState() {
-	const state = {};
+	const pointers = [];
+	const states = [];
+	const state = function state() {
+		let found;
+		for (let pointer of pointers) {
+			if (pointer.length!==arguments.length) {
+				continue;
+
+			} else if (pointer.filter((val, i) => val!==arguments[i]).length) {
+				continue;
+			}
+
+			return states[pointers.indexOf(pointer)];
+		}
+
+		pointers.push([...arguments]);
+		states.push(createState());
+		return states[states.length-1];
+	}
 
 	for (let i=0; i<properties.length; i++) {
 		if (Object.defineProperty) {
