@@ -1,5 +1,5 @@
 
-import destroy from '../lib/destroy'
+import { destroyPlugin } from '../lib/destroy'
 import querySelectorAll from '../lib/querySelectorAll'
 import resolveDataAttribute from '../lib/resolveDataAttribute'
 
@@ -54,7 +54,7 @@ export function updateGlobal(name, data)
 export function unloadGlobal()
 {
 	Object.keys(_loadedGlobal).forEach(function(key) {
-		destroy(_loadedGlobal[key]);
+		destroyPlugin(_loadedGlobal[key]);
 		delete _loadedGlobal[key];
 	});
 }

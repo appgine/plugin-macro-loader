@@ -5,7 +5,7 @@ import { loadData } from './scripts'
 import resolveDataAttribute from '../lib/resolveDataAttribute'
 import redboxWrapper from '../lib/redboxWrapper'
 import contains from '../lib/contains'
-import destroy from '../lib/destroy'
+import { destroyPlugin } from '../lib/destroy'
 import createState from '../lib/state'
 
 const _binders = [];
@@ -198,7 +198,7 @@ export function unloadPlugins(plugins)
 			_loaded.splice(_loaded.indexOf(pluginObj), 1);
 		}
 
-		destroy(pluginObj, false);
+		destroyPlugin(pluginObj, false);
 	});
 }
 

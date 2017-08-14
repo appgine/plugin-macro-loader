@@ -1,6 +1,6 @@
 
 import redboxWrapper from './redboxWrapper'
-import destroy from './destroy'
+import { destroyPlugin } from './destroy'
 
 
 /**
@@ -16,7 +16,7 @@ export default function createCreateInstance(PluginApi) {
 	return function createInstance(pluginObj, createPlugin) {
 		pluginObj.plugin = createPlugin;
 		pluginObj.hotReload = function(newPlugin) {
-			redboxWrapper(pluginObj, () => destroy(pluginObj, newPlugin!==null));
+			redboxWrapper(pluginObj, () => destroyPlugin(pluginObj, newPlugin!==null));
 
 			pluginObj.plugin = newPlugin===null ? null : (newPlugin || pluginObj.plugin);
 			pluginObj.pluginApi = undefined;

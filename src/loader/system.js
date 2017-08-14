@@ -1,5 +1,5 @@
 
-import destroy from '../lib/destroy'
+import { destroyPlugin } from '../lib/destroy'
 import createState from '../lib/state'
 
 const _pluginsSystem = [];
@@ -15,7 +15,7 @@ export function bindSystem(createInstance) {
 			load(reload=false) {
 				if (this.loaded===reload) {
 					this.loaded = true;
-					destroy(this);
+					destroyPlugin(this);
 					createInstance(this, plugin);
 				}
 			},
@@ -35,7 +35,7 @@ export function bindSystem(createInstance) {
 			},
 			willDispose() {
 				pluginObj.loaded = false;
-				destroy(pluginObj);
+				destroyPlugin(pluginObj);
 
 				if (_pluginsSystem.indexOf(pluginObj)!==-1) {
 					_pluginsSystem.splice(_pluginsSystem.indexOf(pluginObj), 1);
@@ -59,6 +59,6 @@ export function unloadSystem()
 {
 	if (_loadedSystem) {
 		_loadedSystem = false;
-		_pluginsSystem.forEach(pluginObj => destroy(pluginObj));
+		_pluginsSystem.forEach(pluginObj => destroyPlugin(pluginObj));
 	}
 }
