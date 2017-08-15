@@ -85,6 +85,7 @@ function apiAccessor(key) {
 						$element: this._pluginObj.$element,
 						pluginName: this._pluginObj.pluginName,
 						pluginId: this._pluginObj.pluginId,
+						state: this._pluginObj.state,
 						name: this._pluginObj.name,
 					};
 
