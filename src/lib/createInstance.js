@@ -25,10 +25,16 @@ export default function createCreateInstance(PluginApi) {
 			pluginObj.instances = [];
 
 			pluginObj.plugin && redboxWrapper(pluginObj, function() {
-				const pluginApi = new PluginApi(pluginObj);
+				const pluginApi = new PluginApi({
+					$element: pluginObj.$element,
+					pluginName: pluginObj.pluginName,
+					pluginId: pluginObj.pluginId,
+					state: pluginObj.state,
+					name: pluginObj.name,
+				}, pluginObj.hotReload);
 
 				pluginObj.pluginApi = pluginApi;
-				pluginObj.api = pluginApi.get.bind(pluginApi);
+				pluginObj.api = pluginApi.eachApi.bind(pluginApi);
 
 				if (isArgumentObj(pluginObj.plugin, 'plugin')) {
 					pluginObj.instances.push(pluginObj.plugin.call(pluginApi, pluginObj.pluginArgumentsObj||{})||{});

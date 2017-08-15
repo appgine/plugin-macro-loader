@@ -6,7 +6,7 @@ const _plugins = [];
 
 export default function createPluginApi(...apiParents) {
 
-	function _PluginApi(pluginObj) {
+	function _PluginApi(pluginThis, hotReload) {
 		if (Object.defineProperty) {
 			Object.defineProperty(this, '_context', {
 				value: {},
@@ -18,9 +18,10 @@ export default function createPluginApi(...apiParents) {
 			this._context = {};
 		}
 
-		_plugins.push(pluginObj);
-		this._pluginObj = pluginObj;
+		_plugins.push(this);
 		this._PluginApi = _PluginApi;
+		this._pluginThis = pluginThis;
+		this._hotReload = hotReload;
 	}
 
 	_PluginApi.prototype = PluginApi.prototype;
@@ -81,13 +82,6 @@ function apiAccessor(key) {
 			for (let name of Object.keys(apiList)) {
 				if (key in apiList[name]) {
 					const apiFn = apiList[name][key].default || apiList[name][key];
-					const pluginThis = {
-						$element: this._pluginObj.$element,
-						pluginName: this._pluginObj.pluginName,
-						pluginId: this._pluginObj.pluginId,
-						state: this._pluginObj.state,
-						name: this._pluginObj.name,
-					};
 
 					this._context[name] = this._context[name] || [];
 
@@ -98,10 +92,14 @@ function apiAccessor(key) {
 							this._context[name][i] = (typeof initialState==='function') ? initialState() : clone(initialState);
 						}
 
-						return apiFn.call(pluginThis, this._context[name][i], ...arguments);
+						return apiFn.call(this._pluginThis, this._context[name][i], ...arguments);
 
 					} else {
-						return this._context[name][i] = apiFn.call(pluginThis, this._context[name][i], ...arguments);
+						const result = apiFn.call(this._pluginThis, this._context[name][i], ...arguments);
+
+						if (this._context[name][i]===undefined) {
+							this._context[name][i] = result;
+						}
 					}
 				}
 			}
@@ -112,13 +110,13 @@ function apiAccessor(key) {
 function PluginApi() {}
 
 
-PluginApi.prototype.get = function(name) {
-	return this._context[name] && this._context[name].filter(_ => _).shift();
+PluginApi.prototype.eachApi = function(name, fn) {
+	(this._context[name]||[]).forEach(fn);
 }
 
 PluginApi.prototype.destroy = function() {
-	if (_plugins.indexOf(this._pluginObj)!==-1) {
-		_plugins.splice(_plugins.indexOf(this._pluginObj), 1);
+	if (_plugins.indexOf(this)!==-1) {
+		_plugins.splice(_plugins.indexOf(this), 1);
 	}
 
 	Object.keys(this._context).forEach(name => {
@@ -137,10 +135,10 @@ PluginApi.prototype.destroy = function() {
 function hotReload(name) {
 	let error = null;
 	_plugins.
-		filter(({ pluginApi }) => pluginApi && (name in pluginApi._context)).
-		forEach(pluginObj => {
+		filter(pluginApi => (name in pluginApi._context)).
+		forEach(({ _hotReload }) => {
 			try {
-				pluginObj.hotReload();
+				_hotReload && _hotReload();
 
 			} catch (e) {
 				error = e;
