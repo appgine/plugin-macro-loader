@@ -14,8 +14,15 @@ export default function createPluginApi(...apiParents) {
 				writable: false
 			});
 
+			Object.defineProperty(this, '_spawn', {
+				value: [],
+				enumerable: false,
+				writable: false
+			});
+
 		} else {
 			this._context = {};
+			this._spawn = [];
 		}
 
 		_plugins.push(this);
@@ -112,9 +119,12 @@ function PluginApi() {}
 
 PluginApi.prototype.eachApi = function(name, fn) {
 	(this._context[name]||[]).forEach(fn);
+	this._spawn.forEach(api => api.eachApi(name, fn));
 }
 
 PluginApi.prototype.destroy = function() {
+	this._spawn.forEach(api => api.destroy());
+
 	if (_plugins.indexOf(this)!==-1) {
 		_plugins.splice(_plugins.indexOf(this), 1);
 	}
@@ -130,6 +140,13 @@ PluginApi.prototype.destroy = function() {
 			}
 		}
 	});
+}
+
+PluginApi.prototype.spawn = function(pluginThis) {
+	const _PluginApi = this._PluginApi;
+	const api = new _PluginApi(pluginThis, this.hotReload);
+	this._spawn.push(api);
+	return api;
 }
 
 function hotReload(name) {
