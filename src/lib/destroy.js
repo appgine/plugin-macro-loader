@@ -1,8 +1,8 @@
 
 
-export function destroyPlugin({ instance={}, pluginApi }, partial=false) {
+export function destroyPlugin({ instances=[], pluginApi }, partial=false) {
 	pluginApi && pluginApi.destroy(partial);
-	destroy(instance, partial);
+	instances.forEach(instance => destroy(instance, partial));
 }
 
 

@@ -22,7 +22,7 @@ export default function createCreateInstance(PluginApi) {
 			pluginObj.plugin = newPlugin===null ? null : (newPlugin || pluginObj.plugin);
 			pluginObj.pluginApi = undefined;
 			pluginObj.api = function(name) {};
-			pluginObj.instance = undefined;
+			pluginObj.instances = [];
 
 			pluginObj.plugin && redboxWrapper(pluginObj, function() {
 				const pluginApi = new PluginApi(pluginObj);
@@ -31,10 +31,10 @@ export default function createCreateInstance(PluginApi) {
 				pluginObj.api = pluginApi.get.bind(pluginApi);
 
 				if (isArgumentObj(pluginObj.plugin, 'plugin')) {
-					pluginObj.instance = pluginObj.plugin.call(pluginApi, pluginObj.pluginArgumentsObj||{})||{};
+					pluginObj.instances.push(pluginObj.plugin.call(pluginApi, pluginObj.pluginArgumentsObj||{})||{});
 
 				} else {
-					pluginObj.instance = pluginObj.plugin.apply(pluginApi, pluginObj.pluginArguments||[])||{};
+					pluginObj.instances.push(pluginObj.plugin.apply(pluginApi, pluginObj.pluginArguments||[])||{});
 				}
 			});
 		}
