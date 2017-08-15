@@ -30,7 +30,7 @@ export default function createCreateInstance(PluginApi) {
 				pluginObj.pluginApi = pluginApi;
 				pluginObj.api = pluginApi.get.bind(pluginApi);
 
-				if (isArgumentObj(pluginObj.plugin)) {
+				if (isArgumentObj(pluginObj.plugin, 'plugin')) {
 					pluginObj.instance = pluginObj.plugin.call(pluginApi, pluginObj.pluginArgumentsObj||{})||{};
 
 				} else {
