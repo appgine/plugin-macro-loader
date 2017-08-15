@@ -35,6 +35,33 @@ export default function createCreateInstance(PluginApi) {
 
 				pluginObj.pluginApi = pluginApi;
 				pluginObj.api = pluginApi.eachApi.bind(pluginApi);
+				pluginObj.pluginApi.createInstance = function(createPlugin, plugin) {
+					plugin = plugin || pluginObj.pluginArgumentsObj;
+					plugin = {...plugin}
+
+					if (plugin.state) {
+						plugin.state = plugin.state(createPlugin, pluginObj.instances.length);
+					}
+
+					const _pluginApi = pluginApi.spawn({
+						$element: plugin.state,
+						pluginName: pluginObj.pluginName,
+						pluginId: pluginObj.pluginId,
+						state: plugin.state,
+						name: pluginObj.name,
+					});
+
+					const instance = createPlugin.call(_pluginApi, plugin)||{};
+					pluginObj.instances.push(instance);
+
+					return function() {
+						if (pluginObj.instances.indexOf(instance)!==-1) {
+							pluginObj.instances.splice(pluginObj.instances.indexOf(instance), 1);
+						}
+
+						destroyPlugin(instance);
+					}
+				}
 
 				if (isArgumentObj(pluginObj.plugin, 'plugin')) {
 					pluginObj.instances.push(pluginObj.plugin.call(pluginApi, pluginObj.pluginArgumentsObj||{})||{});
