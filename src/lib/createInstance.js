@@ -44,7 +44,7 @@ export default function createCreateInstance(PluginApi) {
 					}
 
 					const _pluginApi = pluginApi.spawn({
-						$element: plugin.state,
+						$element: plugin.$element || pluginObj.$element,
 						pluginName: pluginObj.pluginName,
 						pluginId: pluginObj.pluginId,
 						state: plugin.state,
