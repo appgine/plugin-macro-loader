@@ -11,7 +11,7 @@ export function destroy(instance, partial=false) {
 		if (typeof instance.destroy==='function') {
 			instance.destroy(partial);
 
-		} else if (typeof instance.destroy==='object') {
+		} else if (typeof instance.destroy==='object' && instance.destroy.length>0) {
 			instance.destroy.forEach(destroy => destroy(partial));
 
 		} else if (typeof instance==='function') {
