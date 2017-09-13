@@ -1,7 +1,6 @@
 
 import redboxWrapper from './redboxWrapper'
 import { destroyPlugin, destroy } from './destroy'
-import { isArgumentObj } from '../helpers'
 
 
 /**
@@ -63,7 +62,7 @@ export default function createCreateInstance(PluginApi) {
 					}
 				}
 
-				if (isArgumentObj(pluginObj.plugin, 'plugin')) {
+				if (pluginObj.plugin.argumentObj) {
 					pluginObj.instances.push(pluginObj.plugin.call(pluginApi, pluginObj.pluginArgumentsObj||{})||{});
 
 				} else {
