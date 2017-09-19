@@ -15,6 +15,10 @@ export default function createCreateInstance(PluginApi) {
 	 */
 	return function createInstance(pluginObj, createPlugin) {
 		pluginObj.plugin = createPlugin;
+		pluginObj.reload = function() {
+			pluginObj.reloadData && pluginObj.reloadData();
+			pluginObj.hotReload();
+		}
 		pluginObj.hotReload = function(newPlugin) {
 			redboxWrapper(pluginObj, () => destroyPlugin(pluginObj, newPlugin!==null));
 
