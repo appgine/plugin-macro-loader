@@ -13,16 +13,23 @@ const _loaded = [];
 
 
 bindInternalSelector('[data-plugin]:not(noscript)', function($element, options) {
-	resolveDataAttribute($element, 'data-plugin', function({ pluginName, pluginId, name, data }) {
+	resolveDataAttribute($element, 'data-plugin', function({ pluginName, pluginId, name, createData }) {
 		const pluginDef = getPluginByName(pluginName);
 
 		if (pluginDef) {
 			const [ createInstance, plugin ] = pluginDef;
 			const state = createState();
+			const data = createData();
 			const pluginArguments = [$element, data, state, pluginId];
 			const pluginArgumentsObj = { $element, $root: $element, data, state, pluginId };
 
-			const pluginObj = { $element, plugin, state, pluginArguments, pluginArgumentsObj, pluginName, pluginId, name, options }
+			const reloadData = function() {
+				const data = createData();
+				pluginArguments[1] = data;
+				pluginArgumentsObj.data = data;
+			}
+
+			const pluginObj = { $element, plugin, state, reloadData, pluginArguments, pluginArgumentsObj, pluginName, pluginId, name, options }
 			_loaded.push(createInstance(pluginObj, plugin));
 		}
 	});
@@ -105,7 +112,7 @@ export function bind(createInstance) {
 		return _bindSelector(createInstance, pluginName, selector, plugin, function($element, state) {
 			const pluginArguments = [$element, state];
 			const pluginArgumentsObj = { $element, $root: $element, state };
-			return [pluginArguments, pluginArgumentsObj];
+			return { pluginArguments, pluginArgumentsObj };
 		});
 	}
 
@@ -123,7 +130,14 @@ export function bind(createInstance) {
 			const data = loadData(pvar);
 			const pluginArguments = [$element, data, state];
 			const pluginArgumentsObj = { $element, $root: $element, data, state };
-			return [pluginArguments, pluginArgumentsObj];
+			const reloadData = function() {
+				const pvar = $element.getAttribute(attr)||'';
+				const data = loadData(pvar);
+				pluginArguments[1] = data;
+				pluginArgumentsObj.data = data;
+			}
+
+			return { pluginArguments, pluginArgumentsObj, reloadData };
 		});
 	}
 
@@ -143,8 +157,8 @@ function _bindSelector(createInstance, pluginName, selector, plugin, createArgum
 
 	const loader = bindInternalSelector(selector, function($element) {
 		const state = createState();
-		const [pluginArguments, pluginArgumentsObj] = createArguments($element, state);
-		const pluginObj = { $element, plugin, state, pluginArguments, pluginArgumentsObj, pluginName, options: {} }
+		const { pluginArguments, pluginArgumentsObj, reloadData } = createArguments($element, state);
+		const pluginObj = { $element, plugin, state, reloadData, pluginArguments, pluginArgumentsObj, pluginName, options: {} }
 		_loaded.push(createInstance(pluginObj, plugin));
 	});
 

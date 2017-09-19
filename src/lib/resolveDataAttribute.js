@@ -17,8 +17,9 @@ export default function resolveDataAttribute($element, attrName, fn)
 		const name = matched[3] + (matched[5]===undefined ? "[]" : "");
 		const pluginName = matched[4];
 		const pluginId = matched[5]||'';
-		const data = loadData(pvar.join(':') || null)
+		const createData = () => loadData(pvar.join(':') || null)
+		const data = createData();
 
-		fn({ pluginName, pluginId, target, targetId, name, data });
+		fn({ pluginName, pluginId, target, targetId, name, data, createData });
 	});
 }
