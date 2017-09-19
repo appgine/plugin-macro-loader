@@ -28,6 +28,7 @@ export default function createCreateInstance(PluginApi) {
 					$element: pluginObj.$element,
 					pluginName: pluginObj.pluginName,
 					pluginId: pluginObj.pluginId,
+					pluginObj: pluginObj,
 					state: pluginObj.state,
 					name: pluginObj.name,
 				}, pluginObj.hotReload);
@@ -46,6 +47,7 @@ export default function createCreateInstance(PluginApi) {
 						$element: plugin.$element || pluginObj.$element,
 						pluginName: pluginObj.pluginName,
 						pluginId: pluginObj.pluginId,
+						pluginObj: pluginObj,
 						state: plugin.state,
 						name: pluginObj.name,
 					});
