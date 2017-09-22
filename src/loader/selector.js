@@ -1,9 +1,9 @@
 
+import * as errorhub from '../errorhub'
 import { bindInternalSelector, loadInternalSelector } from './internalSelector'
 import { loadData } from './scripts'
 
 import resolveDataAttribute from '../lib/resolveDataAttribute'
-import redboxWrapper from '../lib/redboxWrapper'
 import contains from '../lib/contains'
 import { destroyPlugin } from '../lib/destroy'
 import createState from '../lib/state'
@@ -262,6 +262,11 @@ export function command(name, command, ...args)
 		filter(val => Object.values(val).indexOf(name)!==-1).
 		filter(({ instance }) => instance && instance[command]).
 		map(({ instance }) => {
-			try { return instance[command](...args) } catch (e) {}
+			try {
+				return instance[command](...args)
+
+			} catch (e) {
+				errorhub.dispatch(errorhub.ERROR.COMMAND, 'Failed commandAll', e, arguments);
+			}
 		});
 }

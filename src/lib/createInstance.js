@@ -1,4 +1,5 @@
 
+import * as errorhub from '../errorhub'
 import redboxWrapper from './redboxWrapper'
 import { destroyPlugin, destroy } from './destroy'
 
@@ -20,14 +21,14 @@ export default function createCreateInstance(PluginApi) {
 			pluginObj.hotReload();
 		}
 		pluginObj.hotReload = function(newPlugin) {
-			redboxWrapper(pluginObj, () => destroyPlugin(pluginObj, newPlugin!==null));
+			redboxWrapper('destroyPlugin', pluginObj, () => destroyPlugin(pluginObj, newPlugin!==null));
 
 			pluginObj.plugin = newPlugin===null ? null : (newPlugin || pluginObj.plugin);
 			pluginObj.pluginApi = undefined;
 			pluginObj.api = function(name) {};
 			pluginObj.instances = [];
 
-			pluginObj.plugin && redboxWrapper(pluginObj, function() {
+			pluginObj.plugin && redboxWrapper('createPlugin', pluginObj, function() {
 				const pluginApi = new PluginApi({
 					$element: pluginObj.$element,
 					pluginName: pluginObj.pluginName,
@@ -56,16 +57,21 @@ export default function createCreateInstance(PluginApi) {
 						name: pluginObj.name,
 					});
 
-					const instance = createPlugin.call(_pluginApi, plugin)||{};
-					pluginObj.instances.push(instance);
+					return redboxWrapper('createInstance', _pluginApi, function() {
+						const instance = createPlugin.call(_pluginApi, plugin)||{};
+						pluginObj.instances.push(instance);
 
-					return function() {
-						if (pluginObj.instances.indexOf(instance)!==-1) {
-							pluginObj.instances.splice(pluginObj.instances.indexOf(instance), 1);
+						return function() {
+							if (pluginObj.instances.indexOf(instance)!==-1) {
+								pluginObj.instances.splice(pluginObj.instances.indexOf(instance), 1);
+							}
+
+							redboxWrapper('destroyInstance', _pluginApi, function() {
+								_pluginApi.destroy(false);
+								destroy(instance, false);
+							})
 						}
-
-						destroy(instance);
-					}
+					}) || function(){};
 				}
 
 				if (pluginObj.plugin.argumentObj) {

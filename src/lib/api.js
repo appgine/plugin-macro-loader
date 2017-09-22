@@ -1,4 +1,5 @@
 
+import * as errorhub from '../errorhub'
 import clone from './clone'
 
 const _plugins = [];
@@ -81,35 +82,40 @@ export default function createPluginApi(...apiParents) {
 
 function apiAccessor(key) {
 	return function() {
-		const pluginApiList = [this._PluginApi].concat(this._PluginApi._apiParents);
+		try {
+			const pluginApiList = [this._PluginApi].concat(this._PluginApi._apiParents);
 
-		for (let i=0; i<pluginApiList.length; i++) {
-			const apiList = pluginApiList[i]._apiList;
+			for (let i=0; i<pluginApiList.length; i++) {
+				const apiList = pluginApiList[i]._apiList;
 
-			for (let name of Object.keys(apiList)) {
-				if (key in apiList[name]) {
-					const apiFn = apiList[name][key].default || apiList[name][key];
+				for (let name of Object.keys(apiList)) {
+					if (key in apiList[name]) {
+						const apiFn = apiList[name][key].default || apiList[name][key];
 
-					this._context[name] = this._context[name] || [];
+						this._context[name] = this._context[name] || [];
 
-					const initialState = pluginApiList[i]._apiInitialState[name];
+						const initialState = pluginApiList[i]._apiInitialState[name];
 
-					if (initialState) {
-						if (this._context[name][i]===undefined) {
-							this._context[name][i] = (typeof initialState==='function') ? initialState() : clone(initialState);
-						}
+						if (initialState) {
+							if (this._context[name][i]===undefined) {
+								this._context[name][i] = (typeof initialState==='function') ? initialState() : clone(initialState);
+							}
 
-						return apiFn.call(this._pluginThis, this._context[name][i], ...arguments);
+							return apiFn.call(this._pluginThis, this._context[name][i], ...arguments);
 
-					} else {
-						const result = apiFn.call(this._pluginThis, this._context[name][i], ...arguments);
+						} else {
+							const result = apiFn.call(this._pluginThis, this._context[name][i], ...arguments);
 
-						if (this._context[name][i]===undefined) {
-							this._context[name][i] = result;
+							if (this._context[name][i]===undefined) {
+								this._context[name][i] = result;
+							}
 						}
 					}
 				}
 			}
+
+		} catch (e) {
+			errorhub.dispatch(errorhub.ERROR.APICALL, 'Failed apicall', e, key);
 		}
 	}
 }

@@ -1,4 +1,5 @@
 
+import * as errorhub from '../errorhub'
 import querySelectorAll from '../lib/querySelectorAll'
 
 
@@ -38,8 +39,13 @@ export function loadData(pvar)
 	try {
 		if ($scripts[pvar]) {
 			return JSON.parse($scripts[pvar].textContent);
+		}
+	} catch (e) {
+		errorhub.dispatch(errorhub.ERROR.LOADDATA, 'Failed loaddata', e, pvar);
+	}
 
-		} else if (pvar) {
+	try {
+		if (pvar) {
 			return JSON.parse(pvar);
 		}
 

@@ -1,8 +1,9 @@
 
+import * as errorhub from '../errorhub'
 const $redbox = document.createElement('div');
 
 
-export default function redboxWrapper(stash, tryFn, catchFn)
+export default function redboxWrapper(errormsg, stash, tryFn)
 {
 	if (process.env.NODE_ENV !== 'production') {
 		if (stash.$redbox) {
@@ -40,6 +41,6 @@ export default function redboxWrapper(stash, tryFn, catchFn)
 			}
 		}
 
-		return catchFn && catchFn();
+		errorhub.dispatch(errorhub.ERROR.INSTANCE, errormsg, e, stash);
 	}
 }
