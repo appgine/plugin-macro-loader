@@ -4,6 +4,7 @@ import clone from './clone'
 
 const _plugins = [];
 
+window._pluginMacroLoaderGlobal = window._pluginMacroLoaderGlobal || {};
 
 export default function createPluginApi(...apiParents) {
 
@@ -21,9 +22,20 @@ export default function createPluginApi(...apiParents) {
 				writable: false
 			});
 
+			Object.defineProperty(this, 'global', {
+				enumerable: false,
+				get: function() {
+					return window._pluginMacroLoaderGlobal[pluginThis.name];
+				},
+				set: function(value) {
+					window._pluginMacroLoaderGlobal[pluginThis.name] = value;
+				}
+			});
+
 		} else {
 			this._context = {};
 			this._spawn = [];
+			this.global = undefined;
 		}
 
 		_plugins.push(this);
