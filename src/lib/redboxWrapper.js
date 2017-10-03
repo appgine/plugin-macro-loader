@@ -41,6 +41,7 @@ export default function redboxWrapper(errormsg, stash, tryFn)
 			}
 		}
 
+		stash.failing = true;
 		errorhub.dispatch(errorhub.ERROR.INSTANCE, errormsg, e, stash);
 	}
 }

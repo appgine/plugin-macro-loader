@@ -16,13 +16,20 @@ export default function createCreateInstance(PluginApi) {
 	 */
 	return function createInstance(pluginObj, createPlugin) {
 		pluginObj.plugin = createPlugin;
+		pluginObj.failing = false;
 		pluginObj.reload = function() {
 			pluginObj.reloadData && pluginObj.reloadData();
 			pluginObj.hotReload();
 		}
+		pluginObj.internalCall = function(name, canBeFailing, fn) {
+			if (canBeFailing || pluginObj.failing===false) {
+				redboxWrapper(name, pluginObj, fn);
+			}
+		}
 		pluginObj.hotReload = function(newPlugin) {
 			redboxWrapper('destroyPlugin', pluginObj, () => destroyPlugin(pluginObj, newPlugin!==null));
 
+			pluginObj.failing = false;
 			pluginObj.plugin = newPlugin===null ? null : (newPlugin || pluginObj.plugin);
 			pluginObj.pluginApi = undefined;
 			pluginObj.api = function(name) {};
