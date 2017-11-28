@@ -40,6 +40,7 @@ export default function createState() {
 		}
 	}
 
+	state.__proto__ = Object.prototype;
 	return state;
 }
 
