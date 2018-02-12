@@ -2,6 +2,7 @@
 import * as errorhub from '../errorhub'
 import { bindInternalSelector, loadInternalSelector } from './internalSelector'
 import { loadData } from './scripts'
+import clone from '../lib/clone'
 
 import resolveDataAttribute from '../lib/resolveDataAttribute'
 import contains from '../lib/contains'
@@ -105,13 +106,16 @@ export function bind(createInstance) {
 	/**
 	 * @param {string}
 	 * @param {function}
+	 * @param {mixed}
+	 * @return {function}
 	 */
-	function bindSelector(selector, plugin)
+	function bindSelector(selector, plugin, _data)
 	{
 		const pluginName = '$' + selector;
 		return _bindSelector(createInstance, pluginName, selector, plugin, function($element, state) {
-			const pluginArguments = [$element, state];
-			const pluginArgumentsObj = { $element, $root: $element, state };
+			const data = clone(_data);
+			const pluginArguments = data===undefined ? [$element, state] : [$element, data, state];
+			const pluginArgumentsObj = { $element, $root: $element, state, data };
 			return { pluginArguments, pluginArgumentsObj };
 		});
 	}
