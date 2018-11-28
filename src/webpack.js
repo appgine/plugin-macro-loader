@@ -21,29 +21,29 @@ function createHotLoader(loader, parentModule, fn) {
 
 		fn({
 			...binders,
-			bindApi: patchBinder(bindApi),
-			bindSystem: patchBinder(bindSystem),
-			bindGlobal: patchBinder(bindGlobal),
-			bind: patchBinder(bind),
-			bindSelector: patchBinder(bindSelector),
-			bindAttribute: patchBinder(bindAttribute),
-			hotBindApi: hotReload.bind(undefined, bindApi),
-			hotBindSystem: hotReload.bind(undefined, bindSystem),
-			hotBindGlobal: hotReload.bind(undefined, bindGlobal),
-			hotBind: hotReload.bind(undefined, bind),
-			hotBindSelector: hotReload.bind(undefined, bindSelector),
-			hotBindAttribute: hotReload.bind(undefined, bindAttribute),
+			bindApi: patchBinder(true, bindApi),
+			bindSystem: patchBinder(false, bindSystem),
+			bindGlobal: patchBinder(true, bindGlobal),
+			bind: patchBinder(true, bind),
+			bindSelector: patchBinder(true, bindSelector),
+			bindAttribute: patchBinder(true, bindAttribute),
+			hotBindApi: hotReload.bind(undefined, true, bindApi),
+			hotBindSystem: hotReload.bind(undefined, false, bindSystem),
+			hotBindGlobal: hotReload.bind(undefined, true, bindGlobal),
+			hotBind: hotReload.bind(undefined, true, bind),
+			hotBindSelector: hotReload.bind(undefined, true, bindSelector),
+			hotBindAttribute: hotReload.bind(undefined, true, bindAttribute),
 		});
 	});
 }
 
 
-function patchBinder(binder) {
+function patchBinder(withName, binder) {
 	return function(name, plugin, ...args) {
-		if (typeof name==='string' && typeof plugin==='object') {
+		if (withName) {
 			plugin = plugin.default||plugin;
 
-		} else if (typeof name==='object') {
+		} else {
 			name = name.default||name;
 		}
 
@@ -65,8 +65,8 @@ export default function create(parentModule) {
 		parentModule.hot.accept();
 	}
 
-	return function hotReload(binder, name, plugin, ...args) {
-		if (typeof name === 'number') {
+	return function hotReload(withName, binder, name, plugin, ...args) {
+		if (withName===false) {
 			args.unshift(plugin);
 			plugin = name;
 			name = '';

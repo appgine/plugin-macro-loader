@@ -1,6 +1,6 @@
 {
   "name": "plugin-macro-loader",
-  "version": "1.12.1",
+  "version": "1.13.0",
   "description": "Loader for Latte PluginMacro extension",
   "license": "MIT",
   "keywords": [
@@ -15,7 +15,7 @@
     "node": ">=0.9.0"
   },
   "scripts": {
-    "build": "rm -rf lib && ./node_modules/.bin/babel src --out-dir lib",
+    "build": "rm -rf ./lib && cp -a ./src ./lib",
     "prepublish": "npm run build"
   },
   "dependencies": {
