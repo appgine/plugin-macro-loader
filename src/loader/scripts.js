@@ -3,7 +3,7 @@ import * as errorhub from '../errorhub'
 import querySelectorAll from '../lib/querySelectorAll'
 
 
-const $scripts = {};
+const loaded = {};
 
 
 /**
@@ -13,7 +13,7 @@ export function loadScripts($dom)
 {
 	querySelectorAll($dom, 'script[type^="data-plugin/"]').forEach(function($script) {
 		const pvar = ($script.getAttribute('type')||'').replace(/data-plugin\//, '');
-		$scripts[pvar] = $script;
+		loaded[pvar] = $script.textContent;
 	});
 }
 
@@ -25,7 +25,7 @@ export function unloadScripts($dom)
 {
 	querySelectorAll($dom, 'script[type^="data-plugin/"]').forEach(function($script) {
 		const pvar = ($script.getAttribute('type')||'').replace(/data-plugin\//, '');
-		delete $scripts[pvar];
+		delete loaded[pvar];
 	});
 }
 
@@ -37,19 +37,11 @@ export function unloadScripts($dom)
 export function loadData(pvar)
 {
 	try {
-		if ($scripts[pvar]) {
-			return JSON.parse($scripts[pvar].textContent);
-		}
+		return JSON.parse(loaded[pvar] || pvar || JSON.stringify(null));
+
 	} catch (e) {
-		errorhub.dispatch(errorhub.ERROR.LOADDATA, 'Failed loaddata', e, pvar);
+		loaded[pvar] && errorhub.dispatch(errorhub.ERROR.LOADDATA, 'Failed loaddata', e, pvar);
 	}
-
-	try {
-		if (pvar) {
-			return JSON.parse(pvar);
-		}
-
-	} catch (e) {}
 
 	return pvar;
 }
