@@ -22,9 +22,18 @@ export default function createState() {
 			return states[pointers.indexOf(pointer)];
 		}
 
+		const substate = createState();
+
+		substate.destroy = function() {
+			if (states.indexOf(substate)!==-1) {
+				pointers.splice(states.indexOf(substate), 1);
+				states.splice(states.indexOf(substate), 1);
+			}
+		}
+
 		pointers.push([...arguments]);
-		states.push(createState());
-		return states[states.length-1];
+		states.push(substate);
+		return substate;
 	}
 
 	for (let i=0; i<properties.length; i++) {
