@@ -31,10 +31,7 @@ export function loadInternalSelector($dom, options)
 	Object.keys(internalSelector).forEach(function(selector) {
 		querySelectorAll($dom, selector).forEach(function($node) {
 			internalSelector[selector].forEach(function([fn, $nodeList]) {
-				if ($nodeList.indexOf($node)===-1) {
-					$nodeList.push($node);
-					fn($node, {...options});
-				}
+				fn($node, {...options});
 			});
 		});
 	});
