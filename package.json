@@ -1,6 +1,6 @@
 {
   "name": "plugin-macro-loader",
-  "version": "1.13.2",
+  "version": "1.13.3",
   "description": "Loader for Latte PluginMacro extension",
   "license": "MIT",
   "keywords": [
@@ -30,11 +30,11 @@
   "main": "lib/loader.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wavelo/plugin-macro-loader.git"
+    "url": "https://github.com/appgine/plugin-macro-loader.git"
   },
   "author": "Ales Kafka <ales.kafka@gmail.com>",
   "bugs": {
-    "url": "https://github.com/wavelo/plugin-macro-loader/issues"
+    "url": "https://github.com/appgine/plugin-macro-loader/issues"
   },
-  "homepage": "https://github.com/wavelo/plugin-macro-loader"
+  "homepage": "https://github.com/appgine/plugin-macro-loader"
 }
